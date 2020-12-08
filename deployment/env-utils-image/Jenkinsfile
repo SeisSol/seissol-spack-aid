@@ -1,0 +1,291 @@
+/*
+key=$(singularity key list | grep $USERNAME | grep -oP "^\d+")
+echo "${PASSWORD}" | singularity sign -k ${key} ./test.sif
+singularity push ./test.sif library://7bits-register/collection/test.sif:latest
+*/
+/*
+Requirements:
+    - docker with buildx
+    - python3
+    - singularity
+*/
+
+properties([
+    parameters([
+        choice(
+            choices: ['ubuntu-1804'], 
+            description: 'Operating System', 
+            name: 'OS'),
+        string(
+            defaultValue: '',
+            description: 'Spack version to be used (denoted as image tag). Latest will be used if the field is empty', 
+            name: 'SPACK_VERSION', 
+            trim: true),
+        choice(
+            choices: ['amd64', 'arm64', 'ppc64le'], 
+            description: 'Architecture family', 
+            name: 'ARCH_FAMILY'),
+        string(
+            defaultValue: '',
+            description: 'Specific architecture for arch. family. The most generic image will be built if the field is empty', 
+            name: 'ARCH', 
+            trim: true),
+        string(
+            defaultValue: 'gcc@8.3.0', 
+            description: 'Target compiler suite which is going to be used for building packages. Use Spack syntax', 
+            name: 'TARGET_COMPILER', 
+            trim: true),
+        string(
+            defaultValue: 'openmpi@3.1.5+cuda', 
+            description: 'Target MPI. Provide a vendor and constrains with Spack syntax', 
+            name: 'TARGET_MPI', 
+            trim: true),
+        string(
+            defaultValue: 'cuda@10.1.243', 
+            description: 'Target GPU API/libs. Provide a version and constrains with Spack syntax', 
+            name: 'TARGET_GPU',
+            trim: true),
+        string(
+            defaultValue: '~/.seissol-aid', 
+            description: 'Pass to the cache directory', 
+            name: 'CACHE_DIR', 
+            trim: true)
+    ])
+])
+
+
+pipeline {
+    agent any
+
+    stages {
+        
+        stage('RefineInputeParams') {
+            steps {
+                script {
+                    dockerhubAccount = "unknown"
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub', 
+                                                      usernameVariable: 'USERNAME', 
+                                                      passwordVariable: 'PASSWORD')]) {
+                        dockerhubAccount = "${USERNAME}"
+                    }
+
+                    spackBaseImageName = dockerhubAccount + "/spack-${params.OS}"
+                    if (params.SPACK_VERSION.isAllWhitespace()) {
+                        spackBaseImageName += ":latest" 
+                    }
+                    else {
+                        spackBaseImageName += ":${params.SPACK_VERSION}"
+                    }
+
+
+                    builderImageName = dockerhubAccount + "/spack_custom_builder:"
+                    builderImageName += generateBuilderTag(params.OS, params.TARGET_COMPILER).trim()
+
+                    resImageFile = "seissol-base."
+                    resImageFile += generateImageFileTag(params.OS, 
+                                                         params.TARGET_COMPILER, 
+                                                         params.TARGET_MPI, 
+                                                         params.TARGET_GPU, 
+                                                         params.ARCH_FAMILY, 
+                                                         params.ARCH).trim()
+                    resImageFile += ".def"
+                }
+            }
+        }
+        
+
+        stage('CleanWorkspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
+        stage('DumpData') {
+            steps {
+                script {
+                    sh """
+                        mkdir -p ${params.CACHE_DIR}
+                        (echo "dockerhub: ${dockerhubAccount}" \
+                        && echo "base-spack-img: ${spackBaseImageName}" \
+                        && echo "custom-spack-img: ${builderImageName}" \
+                        && echo "res-image-file: ${resImageFile}" \
+                        && echo "") > ${params.CACHE_DIR}/info.txt
+                    """
+                }
+            }
+        }
+
+        stage('Clone') {
+            // get SeisSol-Spack repository
+            environment {
+                TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
+            }
+            steps {
+                git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
+            }
+        }
+
+        stage('GenerateCustomSpack') {
+            steps{
+                dir("deployment/env-utils-image") {
+                    sh 'mkdir build'                  
+                    sh """
+                    python3 ./scripts/concretize_builder.py --compiler ${params.TARGET_COMPILER} \
+                                                            --spack_base_image ${spackBaseImageName} \
+                                                            --arch_family ${params.ARCH_FAMILY} \
+                                                            --input_dir ./templates \
+                                                            --output_dir  ./build
+                    cp ./build/Dockerfile.spack ${params.CACHE_DIR}
+                    """
+                }
+            }
+        }
+        stage('BuildCustomSpack') {
+            steps {
+                script {
+                    imagePath = './deployment/env-utils-image/build/Dockerfile.spack'
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub', 
+                                                      usernameVariable: 'USERNAME', 
+                                                      passwordVariable: 'PASSWORD')]) {
+                        sh """
+                        docker login -u ${USERNAME} -p ${PASSWORD}
+                        docker buildx build -t ${builderImageName} \
+                                            --platform ${params.ARCH_FAMILY} \
+                                            --file ${imagePath} . --push
+                        """
+                    }
+                }
+            }
+        }
+        stage('GenerateSingularityFile') {
+            steps {
+                script {
+                    dir("deployment/env-utils-image") {
+                        sh """
+                        python3 ./scripts/concretize_spac_spec.py \
+                                     --compiler ${params.TARGET_COMPILER} \
+                                     --mpi ${params.TARGET_MPI} \
+                                     --gpu ${params.TARGET_GPU} \
+                                     --builder_image ${builderImageName} \
+                                     --target_image ${params.OS} \
+                                     --arch_family ${params.ARCH_FAMILY} \
+                                     --input_dir ./templates \
+                                     --output_dir  ./build
+                        cp ./build/spack.yaml ${params.CACHE_DIR}
+                        """
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub', 
+                                        usernameVariable: 'USERNAME', 
+                                        passwordVariable: 'PASSWORD')]) {
+                            dir('./build') {
+                                sh """
+                                echo "${resImageFile}"
+                                docker run --rm -v \$(pwd):/workspace -w /workspace ${builderImageName} containerize > ${resImageFile}
+                                cp ./${resImageFile} ${params.CACHE_DIR}
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
+        stage('BuildSingularityImage') {
+            steps{
+                script {
+
+                }
+            }
+        }
+        */
+
+        stage('PushToSingularity') {
+            steps {
+                // TODO: complete
+                sh "echo push to Singularity..."
+            }
+        }
+    }
+    post { 
+        always {
+            // TODO: clean up
+            sh 'echo "end..."'
+        }
+    }
+}
+
+// AUX functions
+String adjustToRegex(String str) {
+    return str.replaceAll("/","\\\\/");
+}
+
+
+String compose(String str1, String str2) {
+    return str1 + '_' + str2
+}
+
+String removeVersionAndConstrains(String spec) {
+    def components = spec.replace('@', '-').split('[\\^\\+]')
+    return components[0]
+}
+
+
+String generateBuilderTag(String os, String compiler, String arch = "") {
+    suffix = ""
+    if (arch.isAllWhitespace()) {
+        suffix = removeVersionAndConstrains(compiler)
+    }
+    else {
+        suffix = compose(arch, removeVersionAndConstrains(compiler))
+    }
+    return compose(os.replaceAll("[:/]", '-'), suffix)
+}
+
+String adjustMPI(String spec) {
+    gpuExpr = /(cuda)(@(\d+.\d+.\d+))?/
+    def matcher = (spec =~ gpuExpr)
+
+    String gpuSpec = ""
+    // check whether there cuda has been specified
+    if (matcher.count) {
+        gpuSpec = "_cuda"
+        // try to find cuda version
+        cudaVersionExpr = /\d+.\d+.\d+/
+        for (int i = 0; i < matcher.count; ++i) {
+            for (int j = 0; j < matcher[i].size(); ++j) {
+                if (matcher[i][j] ==~ cudaVersionExpr) {
+                    gpuSpec += "-" + matcher[i][j]
+                    break;
+                }
+            }
+        }
+    }
+
+    // Find MPI impl. and its version
+    def components = spec.replace('@', '-').split('[\\^\\+]')
+    String mpiSpec = components[0]
+    return mpiSpec + gpuSpec
+}
+
+
+void generateImageTag(String os, String compiler, String arch, String mpi) {
+    return compose(generateBuilderTag(os, compiler, arch), adjustMPI(mpi))
+}
+
+
+// new functions
+def getNameAndVersionFromSpackSpec(String spec) {
+    def nameAndVersion = spec.split("\\+")[0]
+    return nameAndVersion.replace('@', '-')
+}
+
+
+def generateImageFileTag(String os, String compiler, String mpi, String gpu, String archFamilty, String arch) {
+    String imageTag = compose(os, compiler)
+    imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(mpi))
+    imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(gpu))
+    if (!arch.isAllWhitespace()) {
+        imageTag = compose(imageTag, arch)
+    }
+    return imageTag
+}

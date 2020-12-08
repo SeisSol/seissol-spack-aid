@@ -21,10 +21,10 @@ class Pumgen(CMakePackage):
         
     depends_on('netcdf-c +shared +mpi', when='+with_netcdf') # NOTE: only tested with 4.4.0 version
     depends_on('hdf5 +fortran +shared +hl +mpi') # NOTE: only tested with 1.8.21 version
-    depends_on('pumi +int64 +zoltan -fortran', when='~with_simmetrix')
+    depends_on('pumi +int64 +zoltan ~fortran', when='~with_simmetrix')
     depends_on('simmetrix-simmodsuite', when='+with_simmetrix')
-    depends_on('pumi +int64 simmodsuite=kernels +zoltan -fortran', when='+with_simmetrix')
-    depends_on('zoltan@3.83 +parmetis+int64 -fortran')
+    depends_on('pumi +int64 simmodsuite=kernels +zoltan ~fortran', when='+with_simmetrix')
+    depends_on('zoltan@3.83 +parmetis+int64 ~fortran +shared')
 
     def cmake_args(self):
         args = [

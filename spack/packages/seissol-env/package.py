@@ -30,8 +30,8 @@ class SeissolEnv(BundlePackage):
     
 
     depends_on('mpi', when="+mpi")
-    depends_on('parmetis', when="+mpi")
-    depends_on('metis +int64', when="+mpi")
+    depends_on('parmetis +int64 +shared', when="+mpi")
+    depends_on('metis +int64 +shared', when="+mpi")
     depends_on('libxsmm@1.15 +generator', when="+x86")
 
     depends_on('hdf5@1.8.21 +fortran +shared ~mpi', when="~mpi")

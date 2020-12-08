@@ -19,14 +19,13 @@ class SeissolUtils(Package):
     homepage = "http://www.seissol.org"
     version('develop',
             git='https://github.com/SeisSol/SeisSol.git',
-            branch='ravil/spack', submodules=True)
+            branch='master', submodules=True)
 
     maintainers = ['ravil-mobile']
 
     variant('cookbook', 
             default=False, 
-            description="fetches cookbook. Be sure that you "
-                        "have access to the SeisSol LRZ-gitlab repo.")
+            description="fetches SeisSol cookbook i.e., exemplary setups")
 
     variant('benchmarks', 
             default=False, 
@@ -52,8 +51,9 @@ class SeissolUtils(Package):
     depends_on('glm@0.9.7.1')
     depends_on('proj@4.9.2')
 
-    depends_on("gmsh+hdf5+metis", when='~gmsh_gui') 
-    depends_on("gmsh+hdf5+metis+fltk", when='+gmsh_gui') 
+    depends_on("gmsh+hdf5+metis+netgen", when='~gmsh_gui') 
+    depends_on("gmsh+hdf5+metis+fltk+netgen", when='+gmsh_gui')
+    depends_on("netgen+metis")
 
     depends_on("paraview+hdf5+qt", when="+paraview") 
     depends_on("mesa~llvm", when="+paraview") 
