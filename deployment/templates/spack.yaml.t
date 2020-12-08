@@ -3,7 +3,7 @@ spack:
   - compilers: [{{ compiler }}]
   - mpis: [{{ mpi }}]
   - targets: [target={{ arch }}]
-  - packages: [seissol-env+mpi+asagi~building_tools, seissol-utils]
+  - packages: [seissol-env+mpi+asagi~building_tools, seissol-utils{{ extra }}]
 
   specs:
   - matrix:
@@ -43,4 +43,4 @@ spack:
             && update-alternatives --install /usr/bin/g++ python /opt/view/bin/g++ 20 \
             && ranlib /opt/view/lib/gcc/*/*/libgcc.a \
             && pip3 install scons numpy \
-            && mkdir local_workspace
+            && mkdir workspace

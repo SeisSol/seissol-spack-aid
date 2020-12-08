@@ -39,14 +39,20 @@ if not os.path.exists(args.input_dir):
 template_loader = jinja2.FileSystemLoader(searchpath=args.input_dir)
 template_env = jinja2.Environment(loader=template_loader)
 
+# concretize custom builder image
 print('=' * 80)
 template = template_env.get_template('Dockerfile.spack.t')
 custom_builder = template.render(spack_os = convert_to_spack_os(args.os), compiler=args.compiler)
 print(custom_builder)
 
+# concretize spack template
 print('=' * 80)
+extra_packages = ""
+if "cuda" in args.mpi:
+    extra_packages = ", cuda"
+
 template = template_env.get_template('spack.yaml.t')
-spack_spec = template.render(compiler=args.compiler, mpi=args.mpi, arch=args.arch, os=args.os)
+spack_spec = template.render(compiler=args.compiler, mpi=args.mpi, arch=args.arch, os=args.os, extra=extra_packages)
 print(spack_spec)
 
 
