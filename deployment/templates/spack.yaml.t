@@ -38,10 +38,9 @@ spack:
 
     extra_instructions:
         final: |
-            RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20 \
-                && update-alternatives --install /usr/bin/gcc python /opt/view/bin/gcc 20 \
-                && update-alternatives --install /usr/bin/g++ python /opt/view/bin/g++ 20 \
-                && ranlib /opt/view/lib/gcc/*/*/libgcc.a \
-                && pip3 install scons numpy \
-                && mkdir local_workspace
-            WORKDIR /local_workspace
+            update-alternatives --install /usr/bin/python python /usr/bin/python3 20 \
+            && update-alternatives --install /usr/bin/gcc python /opt/view/bin/gcc 20 \
+            && update-alternatives --install /usr/bin/g++ python /opt/view/bin/g++ 20 \
+            && ranlib /opt/view/lib/gcc/*/*/libgcc.a \
+            && pip3 install scons numpy \
+            && mkdir local_workspace
