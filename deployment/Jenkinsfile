@@ -101,30 +101,30 @@ pipeline {
 
         stage('Generate') {
             steps{
-                dir("spack_support/automatic_delivery") {
+                dir("deployment") {
                     sh 'mkdir build'
                     
                     // fill templated spack.yaml.t file with the actual values provided by the user 
                     sh "python3 ./concretize.py -i ./templates -o ./build -c ${TARGET_COMPILER} --mpi ${TARGET_MPI} --os ${BUILDER_OS} -a ${imageHostArchParam}"
                    
                     dir("build") {
-                        sh "spack containerize > ./Dockerfile.env"
+                        sh "spack containerize > ./SeisSol.def"
 
                         echo "${builderImageName}"
                         echo "${envImageName}"
 
                         // substitute the default spack builder os to the one built in the previous step
-                        sh "sed -i 's/\\(FROM \\)\\(.*\\)\\( as builder\\)/\\1${builderImageName}\\3/' ./Dockerfile.env"
+                        sh "sed -i 's/\\(FROM \\)\\(.*\\)\\( as builder\\)/\\1${builderImageName}\\3/' .//SeisSol.def"
 
                         // substitute the resultant os from spack-default to the one provided by the user
                         script {
                             TARGET_OS_REGEX = adjustToRegex(targetOsParam)
                         }
                         
-                        //sh "sed -i 's/\\(FROM \\)\\([[:alpha:]]\\+:[[:digit:]]\\+\\.[[:digit:]]\\+\\)/\\1${TARGET_OS_REGEX}/' ./Dockerfile.env"
+                        //sh "sed -i 's/\\(FROM \\)\\([[:alpha:]]\\+:[[:digit:]]\\+\\.[[:digit:]]\\+\\)/\\1${TARGET_OS_REGEX}/' .//SeisSol.def"
 
                         // print out the generated file
-                        sh "cat ./Dockerfile.env"
+                        sh "cat ./SeisSol.def"
                     }
                 }
             }
@@ -132,12 +132,12 @@ pipeline {
 
         stage('Build custom spack image') {
             steps{
-                dir("spack_support") {
+                dir("deployment") {
                     echo 'building ...'
                     /*
                     script {
-                        builderImage = docker.build("${builderImageName}", "-f ./automatic_delivery/build/Dockerfile.spack .")
-                        envImage = docker.build("ravilmobile/${envImageName}", "-f ./automatic_delivery/build/Dockerfile.env .")
+                        builderImage = docker.build("${builderImageName}", "-f ./build/Dockerfile.spack .")
+                        envImage = docker.build("ravilmobile/${envImageName}", "-f ./build/Dockerfile.env .")
                     }
                     */
                 }
