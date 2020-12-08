@@ -114,7 +114,7 @@ pipeline {
                         echo "${envImageName}"
 
                         // substitute the default spack builder os to the one built in the previous step
-                        sh "sed -i 's/\\(FROM \\)\\(.*\\)\\( as builder\\)/\\1${builderImageName}\\3/' .//SeisSol.def"
+                        sh "sed -i 's/\\(From: \\)\\(.*\\)/\\1${builderImageName}/' .//SeisSol.def"
 
                         // substitute the resultant os from spack-default to the one provided by the user
                         script {
