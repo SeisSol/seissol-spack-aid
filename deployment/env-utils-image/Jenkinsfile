@@ -162,7 +162,7 @@ pipeline {
                 script {
                     dir("deployment/env-utils-image") {
                         sh """
-                        python3 ./scripts/concretize_spac_spec.py \
+                        python3 ./scripts/concretize_spack_spec.py \
                                      --compiler ${params.TARGET_COMPILER} \
                                      --mpi ${params.TARGET_MPI} \
                                      --gpu ${params.TARGET_GPU} \
