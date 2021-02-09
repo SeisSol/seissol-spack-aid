@@ -81,14 +81,12 @@ pipeline {
                     builderImageName = dockerhubAccount + "/spack_custom_builder:"
                     builderImageName += generateBuilderTag(params.OS, params.TARGET_COMPILER).trim()
 
-                    resImageFile = "seissol-base."
-                    resImageFile += generateImageFileTag(params.OS, 
-                                                         params.TARGET_COMPILER, 
-                                                         params.TARGET_MPI, 
-                                                         params.TARGET_GPU, 
-                                                         params.ARCH_FAMILY, 
-                                                         params.ARCH).trim()
-                    resImageFile += ".def"
+                    resImageFile = "seissol-base." + generateImageFileTag(params.OS, 
+                                                                          params.TARGET_COMPILER, 
+                                                                          params.TARGET_MPI, 
+                                                                          params.TARGET_GPU, 
+                                                                          params.ARCH_FAMILY, 
+                                                                          params.ARCH).trim()
                 }
             }
         }
@@ -122,20 +120,20 @@ pipeline {
             }
             steps {
                 git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
+                sh 'mkdir deployment/env-utils-image/build'   
             }
         }
 
         stage('GenerateCustomSpack') {
             steps{
-                dir("deployment/env-utils-image") {
-                    sh 'mkdir build'                  
+                dir("deployment/env-utils-image") {               
                     sh """
                     python3 ./scripts/concretize_builder.py --compiler ${params.TARGET_COMPILER} \
                                                             --spack_base_image ${spackBaseImageName} \
                                                             --arch_family ${params.ARCH_FAMILY} \
                                                             --input_dir ./templates \
                                                             --output_dir  ./build
-                    cp ./build/Dockerfile.spack ${params.CACHE_DIR}
+                    cp ./build/custom-spack.dockerfile ${params.CACHE_DIR}
                     """
                 }
             }
@@ -143,7 +141,7 @@ pipeline {
         stage('BuildCustomSpack') {
             steps {
                 script {
-                    imagePath = './deployment/env-utils-image/build/Dockerfile.spack'
+                    imagePath = './deployment/env-utils-image/build/custom-spack.dockerfile'
                     withCredentials([usernamePassword(credentialsId: 'docker-hub', 
                                                       usernameVariable: 'USERNAME', 
                                                       passwordVariable: 'PASSWORD')]) {
@@ -157,12 +155,12 @@ pipeline {
                 }
             }
         }
-        stage('GenerateSingularityFile') {
+        stage('GenerateSeisSolEnv') {
             steps {
                 script {
                     dir("deployment/env-utils-image") {
                         sh """
-                        python3 ./scripts/concretize_spac_spec.py \
+                        python3 ./scripts/concretize_spack_spec.py \
                                      --compiler ${params.TARGET_COMPILER} \
                                      --mpi ${params.TARGET_MPI} \
                                      --gpu ${params.TARGET_GPU} \
@@ -179,8 +177,8 @@ pipeline {
                             dir('./build') {
                                 sh """
                                 echo "${resImageFile}"
-                                docker run --rm -v \$(pwd):/workspace -w /workspace ${builderImageName} containerize > ${resImageFile}
-                                cp ./${resImageFile} ${params.CACHE_DIR}
+                                docker run --rm -v \$(pwd):/workspace -w /workspace ${builderImageName} containerize > ${resImageFile}.dockerfile
+                                cp ./${resImageFile}.dockerfile ${params.CACHE_DIR}
                                 """
                             }
                         }
@@ -189,15 +187,20 @@ pipeline {
             }
         }
 
-        /*
+        
         stage('BuildSingularityImage') {
             steps{
                 script {
+                    dir("deployment/env-utils-image/build") {
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub', 
+                                                          usernameVariable: 'USERNAME', 
+                                                          passwordVariable: 'PASSWORD')]) {
 
+                        }
+                    }
                 }
             }
         }
-        */
 
         stage('PushToSingularity') {
             steps {

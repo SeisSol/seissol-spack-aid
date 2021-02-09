@@ -33,5 +33,5 @@ if not os.path.exists(args.output_dir):
     raise RuntimeError('Cannot open the output directory')
 
 
-Aux.write_to_file(file_path=os.path.join(args.output_dir, 'Dockerfile.spack'), 
+Aux.write_to_file(file_path=os.path.join(args.output_dir, 'custom-spack.dockerfile'), 
                   content=custom_builder)

@@ -41,18 +41,19 @@ package_manager = {'ubuntu-1804': 'apt',
                    'centos-7': 'yum',
                    'centos-6': 'yum'}
 
+'''
 target_image = ImageDigest(image_name=os_map[args.target_image],
                            arch_family=args.arch_family)
 
 builder_image = ImageDigest(image_name=args.builder_image,
                             arch_family=args.arch_family)
-
+'''
 spack_spec = template.render(compiler=args.compiler, 
                              mpi=args.mpi,
                              gpu=args.gpu,
                              arch_family=Aux.adjust_arch_family(args.arch_family),
-                             builder_image=builder_image.get_name_with_digest(),
-                             target_image=target_image.get_name_with_digest(),
+                             builder_image=args.builder_image,
+                             target_image=os_map[args.target_image],
                              install_command=package_manager[args.target_image])
 print(spack_spec)
 
