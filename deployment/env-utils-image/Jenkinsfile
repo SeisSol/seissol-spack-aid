@@ -49,7 +49,15 @@ properties([
             defaultValue: '~/.seissol-aid', 
             description: 'Pass to the cache directory', 
             name: 'CACHE_DIR', 
-            trim: true)
+            trim: true),
+        booleanParam(
+            defaultValue: false, 
+            description: 'build singularity image and push it to sylabs cloud', 
+            name: 'SINGULARITY_PUSH'),
+        booleanParam(
+            defaultValue: false, 
+            description: 'force docker to build images without using caching', 
+            name: 'FORCED_BUILD')
     ])
 ])
 
@@ -77,16 +85,33 @@ pipeline {
                         spackBaseImageName += ":${params.SPACK_VERSION}"
                     }
 
-
-                    builderImageName = dockerhubAccount + "/spack_custom_builder:"
+                    imagePrefix = "${params.ARCH_FAMILY}"
+                    builderImageName = dockerhubAccount + "/spack_custom_builder_${imagePrefix}:"
                     builderImageName += generateBuilderTag(params.OS, params.TARGET_COMPILER).trim()
 
-                    resImageFile = "seissol-base." + generateImageFileTag(params.OS, 
-                                                                          params.TARGET_COMPILER, 
-                                                                          params.TARGET_MPI, 
-                                                                          params.TARGET_GPU, 
-                                                                          params.ARCH_FAMILY, 
-                                                                          params.ARCH).trim()
+
+                    resImagePrefix = generateImageFileTag(params.OS,
+                                                          params.TARGET_COMPILER,
+                                                          params.TARGET_MPI, 
+                                                          params.TARGET_GPU,
+                                                          params.ARCH_FAMILY,
+                                                          params.ARCH).trim()
+
+                    resBaseImageName = "seissol_base_${imagePrefix}"
+                    resSingularityImage = resBaseImageName + ".sif"
+                    resSingularityPushName = resSingularityImage + ":" + resImagePrefix
+                    resDockerImageName = dockerhubAccount + "/" + resBaseImageName + ":" + resImagePrefix
+                    
+                    resBaseImageFile = "seissol_base_${imagePrefix}_" + resImagePrefix
+                    resSingularityDefinitionFile = resBaseImageFile + ".def"
+                    resDockerImageFile = resBaseImageFile + ".dockerfile"
+
+                    extraDockerCommands = ''
+                    if (params.FORCED_BUILD) {
+                        extraDockerCommands += '--no-cache'
+                    }
+
+                    cacheSubDir = "${params.CACHE_DIR}/${params.ARCH_FAMILY}"
                 }
             }
         }
@@ -102,19 +127,19 @@ pipeline {
             steps {
                 script {
                     sh """
-                        mkdir -p ${params.CACHE_DIR}
+                        mkdir -p ${cacheSubDir} && rm -rf ${cacheSubDir}/*
                         (echo "dockerhub: ${dockerhubAccount}" \
                         && echo "base-spack-img: ${spackBaseImageName}" \
                         && echo "custom-spack-img: ${builderImageName}" \
-                        && echo "res-image-file: ${resImageFile}" \
-                        && echo "") > ${params.CACHE_DIR}/info.txt
+                        && echo "res-image-name: ${resDockerImageName}" \
+                        && echo "res-image-file: ${resDockerImageFile}" \
+                        && echo "") > ${cacheSubDir}/info.txt
                     """
                 }
             }
         }
 
         stage('Clone') {
-            // get SeisSol-Spack repository
             environment {
                 TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
             }
@@ -133,7 +158,7 @@ pipeline {
                                                             --arch_family ${params.ARCH_FAMILY} \
                                                             --input_dir ./templates \
                                                             --output_dir  ./build
-                    cp ./build/custom-spack.dockerfile ${params.CACHE_DIR}
+                    cp ./build/custom-spack-${params.ARCH_FAMILY}.dockerfile ${cacheSubDir}
                     """
                 }
             }
@@ -141,13 +166,14 @@ pipeline {
         stage('BuildCustomSpack') {
             steps {
                 script {
-                    imagePath = './deployment/env-utils-image/build/custom-spack.dockerfile'
+                    imagePath = "./deployment/env-utils-image/build/custom-spack-${ARCH_FAMILY}.dockerfile"
                     withCredentials([usernamePassword(credentialsId: 'docker-hub', 
                                                       usernameVariable: 'USERNAME', 
                                                       passwordVariable: 'PASSWORD')]) {
                         sh """
                         docker login -u ${USERNAME} -p ${PASSWORD}
-                        docker buildx build -t ${builderImageName} \
+                        docker buildx build ${extraDockerCommands} \
+                                            -t ${builderImageName} \
                                             --platform ${params.ARCH_FAMILY} \
                                             --file ${imagePath} . --push
                         """
@@ -167,18 +193,18 @@ pipeline {
                                      --builder_image ${builderImageName} \
                                      --target_image ${params.OS} \
                                      --arch_family ${params.ARCH_FAMILY} \
+                                     --arch ${params.ARCH} \
                                      --input_dir ./templates \
                                      --output_dir  ./build
-                        cp ./build/spack.yaml ${params.CACHE_DIR}
+                        cp ./build/spack.yaml ${cacheSubDir}
                         """
                         withCredentials([usernamePassword(credentialsId: 'docker-hub', 
                                         usernameVariable: 'USERNAME', 
                                         passwordVariable: 'PASSWORD')]) {
                             dir('./build') {
                                 sh """
-                                echo "${resImageFile}"
-                                docker run --rm -v \$(pwd):/workspace -w /workspace ${builderImageName} containerize > ${resImageFile}.dockerfile
-                                cp ./${resImageFile}.dockerfile ${params.CACHE_DIR}
+                                docker run --rm -v \$(pwd):/workspace -w /workspace ${builderImageName} containerize > ${resDockerImageFile}
+                                cp ./${resDockerImageFile} ${cacheSubDir}
                                 """
                             }
                         }
@@ -188,13 +214,18 @@ pipeline {
         }
 
         
-        stage('BuildSingularityImage') {
+        stage('BuildSeisSolEnv') {
             steps{
                 script {
                     dir("deployment/env-utils-image/build") {
                         withCredentials([usernamePassword(credentialsId: 'docker-hub', 
                                                           usernameVariable: 'USERNAME', 
                                                           passwordVariable: 'PASSWORD')]) {
+                        sh """
+                        docker build ${extraDockerCommands} -t ${resDockerImageName} --file ${resDockerImageFile} .
+                        docker login -u ${USERNAME} -p ${PASSWORD}
+                        docker push ${resDockerImageName}
+                        """
 
                         }
                     }
@@ -202,10 +233,57 @@ pipeline {
             }
         }
 
+        stage('GenerateSingularityDefFile') {
+            steps{
+                script {
+                    dir("deployment/env-utils-image/build") {
+                        sh """
+                           (echo "Bootstrap: docker" \
+                            && echo "From: ${resDockerImageName}" \
+                            && echo "Stage: final" \
+                            && echo "" \
+                            && echo "%post" \
+                            && echo "    rm /etc/profile.d/*spack*.sh" \
+                            && echo "    cat /opt/spack-environment/seissol_env.sh >> \\\$SINGULARITY_ENVIRONMENT" \
+                            && echo "    cat /opt/spack-environment/cuda_env.sh >> \\\$SINGULARITY_ENVIRONMENT" \
+                            && echo "") > ${resSingularityDefinitionFile}
+            
+                            cp ./${resSingularityDefinitionFile} ${cacheSubDir}
+                        """
+                    }
+                }
+            }
+        }
+
         stage('PushToSingularity') {
+            when {
+                expression {
+                    params.SINGULARITY_PUSH
+                }
+            }
             steps {
-                // TODO: complete
-                sh "echo push to Singularity..."
+                script{
+                    dir("deployment/env-utils-image/build") {
+                        withCredentials([usernamePassword(credentialsId: 'privileged_user_id', 
+                                                        usernameVariable: 'USERNAME', 
+                                                        passwordVariable: 'PASSWORD')]) {
+                            sh """
+                            echo ${PASSWORD} | sudo -S -E singularity build ./${resSingularityImage} ./${resSingularityDefinitionFile}
+                            cp ./${resSingularityImage} ${cacheSubDir} 
+                            """
+                        }
+
+                        withCredentials([usernamePassword(credentialsId: 'singularity-user', 
+                                                        usernameVariable: 'USERNAME', 
+                                                        passwordVariable: 'PASSWORD')]) {
+                            key = sh (script: "singularity key list | grep $USERNAME | grep -oP \"^\\d+\"", returnStatus: true)
+                            sh """
+                            echo "${PASSWORD}" | singularity sign -k ${key} ./${resSingularityImage}
+                            singularity push ./${resSingularityImage} library://${USERNAME}/collection/${resSingularityPushName}
+                            """
+                        }
+                    }
+                }
             }
         }
     }
@@ -284,9 +362,11 @@ def getNameAndVersionFromSpackSpec(String spec) {
 
 
 def generateImageFileTag(String os, String compiler, String mpi, String gpu, String archFamilty, String arch) {
-    String imageTag = compose(os, compiler)
+    String imageTag = compose(os, getNameAndVersionFromSpackSpec(compiler))
     imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(mpi))
-    imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(gpu))
+    if (!gpu.isAllWhitespace()) {
+        imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(gpu))
+    }
     if (!arch.isAllWhitespace()) {
         imageTag = compose(imageTag, arch)
     }

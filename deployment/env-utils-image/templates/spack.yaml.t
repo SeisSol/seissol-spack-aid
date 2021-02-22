@@ -2,7 +2,7 @@ spack:
   definitions:
   - compilers: [{{ compiler }}]
   - mpis: [{{ mpi }}]
-  - targets: [target={%+ if arch is defined %}{{ arch }}{% else %}{{ arch_family }}{% endif %}]
+  - targets: [target={%+ if arch is defined and arch != None %}{{ arch }}{% else %}{{ arch_family }}{% endif %}]
   - packages: 
       - seissol-env+mpi+asagi~building_tools{%+ if arch_family != 'x86_64' %}~x86{% endif %}
       - seissol-utils
@@ -12,7 +12,7 @@ spack:
     - [\$compilers]
     - [arch={{ arch_family }}]
   - matrix:
-    - [\$mpis, cmake@3.16.2{%+ if gpu is defined %}{{ ", " }}{{ gpu }}{% endif %}]
+    - [\$mpis, cmake@3.16.2{%+ if gpu is defined and gpu != None %}, {{ gpu }}{% endif %}]
     - [\$targets]
     - [\$%compilers]
   - matrix:
@@ -28,7 +28,11 @@ spack:
       build: {{ builder_image }}
       final: {{ target_image }}
 
-    strip: {%+ if 'cuda' in gpu %}false{% else %}true{% endif %}
+    {%- if gpu is defined and gpu != None %}
+    strip: false
+    {%- else %}
+    strip: true
+    {% endif %}
 
     os_packages:
       command: {{ install_command }}
@@ -38,11 +42,15 @@ spack:
       - pkg-config
       - make
       - git
+      - gdb
       - vim
 
     extra_instructions:
         build: |
-            RUN cd /opt/spack-environment && spack env activate --sh -d . >> /opt/spack-environment/seissol_env.sh
+            RUN cd /opt/spack-environment && . /opt/spack/share/spack/setup-env.sh \
+            && spack env activate --sh -d . >> /opt/spack-environment/seissol_env.sh \
+            && spack find -v > /opt/spack-environment/installed_packages.txt 
+            {%- if gpu is defined and gpu != None %}
             {%- if 'cuda' in gpu %}
             RUN cuda_real_path=$(dirname $(dirname $(readlink /opt/view/bin/nvcc))) \
             && (echo "export CUDA_PATH=${cuda_real_path}" \
@@ -50,6 +58,7 @@ spack:
             &&  echo "export CMAKE_PREFIX_PATH=\$CMAKE_PREFIX_PATH:${cuda_real_path}" \
             &&  echo "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${cuda_real_path}/lib64/stubs" \
             &&  echo "export LIBRARY_PATH=\$LIBRARY_PATH:${cuda_real_path}/lib64/stubs") >> /opt/spack-environment/cuda_env.sh
+            {%- endif %}
             {%- endif %}
 
         final: |
