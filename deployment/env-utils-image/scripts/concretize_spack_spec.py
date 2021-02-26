@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aux import Aux, ImageDigest
+from aux import Aux
 import argparse
 import os
 import jinja2
@@ -9,11 +9,11 @@ import jinja2
 cmd_parser = argparse.ArgumentParser()
 cmd_parser.add_argument('-c','--compiler', help='compiler suite and version')
 cmd_parser.add_argument('--mpi', help='specific mpi implementation, options and version')
-cmd_parser.add_argument('--gpu', help='specific gpu API/lib version')
+cmd_parser.add_argument('--gpu', nargs='?', default=None, help='specific gpu API/lib version')
 cmd_parser.add_argument('--builder_image', help='custom builder spack image')
 cmd_parser.add_argument('--target_image', help='target os and its version')
 cmd_parser.add_argument('--arch_family', help='target image arch family e.g., amd64, arm64, ppc64le')
-cmd_parser.add_argument('--arch', default="", help='specific architecture of a family')
+cmd_parser.add_argument('--arch', nargs='?', default=None, help='specific architecture of a family')
 cmd_parser.add_argument('-i', '--input_dir', help='input directory')
 cmd_parser.add_argument('-o', '--output_dir', help='output directory')
 args = cmd_parser.parse_args()
@@ -41,18 +41,13 @@ package_manager = {'ubuntu-1804': 'apt',
                    'centos-7': 'yum',
                    'centos-6': 'yum'}
 
-target_image = ImageDigest(image_name=os_map[args.target_image],
-                           arch_family=args.arch_family)
-
-builder_image = ImageDigest(image_name=args.builder_image,
-                            arch_family=args.arch_family)
-
 spack_spec = template.render(compiler=args.compiler, 
                              mpi=args.mpi,
                              gpu=args.gpu,
                              arch_family=Aux.adjust_arch_family(args.arch_family),
-                             builder_image=builder_image.get_name_with_digest(),
-                             target_image=target_image.get_name_with_digest(),
+                             arch=args.arch,
+                             builder_image=args.builder_image,
+                             target_image=os_map[args.target_image],
                              install_command=package_manager[args.target_image])
 print(spack_spec)
 
