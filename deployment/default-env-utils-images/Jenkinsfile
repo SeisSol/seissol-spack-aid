@@ -16,7 +16,6 @@ pipeline {
         //stage ('BuildBaseImages') {
             //parallel {
                 stage('Build_amd64') {
-                    agent {label 'runner'}
                     steps {
                         build job: 'env-utils-image', parameters: [
                         string(name: 'OS', value: 'ubuntu-1804'),
@@ -28,7 +27,8 @@ pipeline {
                         string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
                         string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
                         booleanParam(name: 'SINGULARITY_PUSH', value: true),
-                        booleanParam(name: 'FORCED_BUILD', value: true)
+                        booleanParam(name: 'FORCED_BUILD', value: true),
+                        string(name: 'AGENT', value: "runner")
                         ]
                     }
                 }
