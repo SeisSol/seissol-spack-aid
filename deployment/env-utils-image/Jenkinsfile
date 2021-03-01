@@ -264,7 +264,7 @@ pipeline {
             steps {
                 script{
                     dir("deployment/env-utils-image/build") {
-                        withCredentials([usernamePassword(credentialsId: 'privileged_user_id', 
+                        withCredentials([usernamePassword(credentialsId: "${env.NODE_NAME}_id", 
                                                         usernameVariable: 'USERNAME', 
                                                         passwordVariable: 'PASSWORD')]) {
                             sh """

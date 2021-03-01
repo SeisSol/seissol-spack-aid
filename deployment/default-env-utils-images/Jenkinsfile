@@ -8,14 +8,15 @@ pipeline {
             steps {
                 git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
                 script {
-                    cacheDir = "${env.WORKSPACE}/deployment/default-env-utils-images/image-files"
+                    remoteCacheDir = "~/.seissol-aid"
                 }
             }
         }
 
-        stage ('BuildBaseImages') {
-            parallel {
+        //stage ('BuildBaseImages') {
+            //parallel {
                 stage('Build_amd64') {
+                    agent {label 'runner'}
                     steps {
                         build job: 'env-utils-image', parameters: [
                         string(name: 'OS', value: 'ubuntu-1804'),
@@ -25,13 +26,13 @@ pipeline {
                         string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
                         string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
                         string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
-                        string(name: 'CACHE_DIR', value: "${cacheDir}"),
+                        string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
                         booleanParam(name: 'SINGULARITY_PUSH', value: true),
                         booleanParam(name: 'FORCED_BUILD', value: true)
                         ]
                     }
                 }
-
+                /*
                 stage('Build_arm64') {
                     steps {
                         build job: 'env-utils-image', parameters: [
@@ -42,7 +43,7 @@ pipeline {
                         string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
                         string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
                         string(name: 'TARGET_GPU', value: 'cuda@11.0.2'),
-                        string(name: 'CACHE_DIR', value: "${cacheDir}"),
+                        string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
                         booleanParam(name: 'SINGULARITY_PUSH', value: true),
                         booleanParam(name: 'FORCED_BUILD', value: true)
                         ]
@@ -58,15 +59,16 @@ pipeline {
                         string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
                         string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
                         string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
-                        string(name: 'CACHE_DIR', value: "${cacheDir}"),
+                        string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
                         booleanParam(name: 'SINGULARITY_PUSH', value: true),
                         booleanParam(name: 'FORCED_BUILD', value: true)
                         ]
                     }
                 }
+                */
 
-            }
-        }
+            //}
+        //}
     }
 
     post { 
