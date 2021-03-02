@@ -20,62 +20,40 @@ pipeline {
             }
         }
 
-        //stage ('BuildBaseImages') {
-            //parallel {
-                stage('Build_amd64') {
-                    steps {
-                        build job: 'env-utils-image', parameters: [
-                        string(name: 'OS', value: 'ubuntu-1804'),
-                        string(name: 'SPACK_VERSION', value: 'latest'),
-                        string(name: 'ARCH_FAMILY', value: 'amd64'),
-                        string(name: 'ARCH', value: ''),
-                        string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
-                        string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
-                        string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
-                        string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
-                        booleanParam(name: 'SINGULARITY_PUSH', value: false),
-                        booleanParam(name: 'FORCED_BUILD', value: false),
-                        string(name: 'AGENT', value: "runner")
-                        ]
-                    }
-                }
-                /*
-                stage('Build_arm64') {
-                    steps {
-                        build job: 'env-utils-image', parameters: [
-                        string(name: 'OS', value: 'ubuntu-1804'),
-                        string(name: 'SPACK_VERSION', value: 'latest'),
-                        string(name: 'ARCH_FAMILY', value: 'arm64'),
-                        string(name: 'ARCH', value: ''),
-                        string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
-                        string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
-                        string(name: 'TARGET_GPU', value: 'cuda@11.0.2'),
-                        string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
-                        booleanParam(name: 'SINGULARITY_PUSH', value: true),
-                        booleanParam(name: 'FORCED_BUILD', value: true)
-                        ]
-                    }
-                }
-                stage('Build_ppc64le') {
-                    steps {
-                        build job: 'env-utils-image', parameters: [
-                        string(name: 'OS', value: 'ubuntu-1804'),
-                        string(name: 'SPACK_VERSION', value: 'latest'),
-                        string(name: 'ARCH_FAMILY', value: 'ppc64le'),
-                        string(name: 'ARCH', value: ''),
-                        string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
-                        string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
-                        string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
-                        string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
-                        booleanParam(name: 'SINGULARITY_PUSH', value: true),
-                        booleanParam(name: 'FORCED_BUILD', value: true)
-                        ]
-                    }
-                }
-                */
 
-            //}
-        //}
+        stage('Build') {
+            matrix {
+                axes {
+                    axis {
+                        name "CONFIG"
+                        values "ppc64le/cuda@10.1.243", "arm64/cuda@11.0.2", "amd64/cuda@10.1.243"
+                    }
+                }
+            }
+
+            steps {
+                script {
+                    config = "${CONFIG}"
+                    platform = config.replaceFirst("/.+", "")
+                    gpu_lang = config.replaceFirst(".+/", "")
+                }
+
+                build job: 'env-utils-image', parameters: [
+                string(name: 'OS', value: 'ubuntu-1804'),
+                string(name: 'SPACK_VERSION', value: 'latest'),
+                string(name: 'ARCH_FAMILY', value: "${platform}"),
+                string(name: 'ARCH', value: ''),
+                string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
+                string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
+                string(name: 'TARGET_GPU', value: "${gpu_lang}"),
+                string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
+                booleanParam(name: 'SINGULARITY_PUSH', value: true),
+                booleanParam(name: 'FORCED_BUILD', value: false),
+                string(name: 'AGENT', value: "runner")
+                ]
+            }
+        }
+
 
         stage('StashingOnRunner') {
             agent {label 'runner'}
@@ -94,9 +72,11 @@ pipeline {
                 script {
                     pathToGeneratedFiles = "deployment/default-env-utils-images/image-files"
                 }
+
                 dir("${pathToGeneratedFiles}") {
                     unstash "generatedFiles"
                 }
+                
                 script {
                     changedFiles = sh (script: "git status --porcelain ./${pathToGeneratedFiles}", 
                                        returnStdout: true).trim()
@@ -111,6 +91,7 @@ pipeline {
                     !changedFiles.isAllWhitespace()
                 }
             }
+
             steps {
                 script {
                     branchName = "${env.GIT_BRANCH}"

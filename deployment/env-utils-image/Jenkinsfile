@@ -1,5 +1,6 @@
 def gv
 
+
 properties([
     parameters([
         choice(
@@ -88,6 +89,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('RefineInputeParams') {
             steps {
@@ -258,7 +260,7 @@ pipeline {
                 }
             }
             steps {
-                script{
+                script {
                     dir("deployment/env-utils-image/build") {
                         withCredentials([usernamePassword(credentialsId: "${env.NODE_NAME}_id", 
                                                         usernameVariable: 'USERNAME', 
@@ -286,7 +288,8 @@ pipeline {
             }
         }
 
-        stage('RecordMetadata') {
+
+        stage('RecordMetaData') {
             steps {
                 script {
                     machineConfig = sh(script: "uname -a", returnStdout: true).trim()
