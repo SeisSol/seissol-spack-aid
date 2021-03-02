@@ -82,7 +82,9 @@ pipeline {
             steps {
                 sh 'mkdir -p ./generated-files'
                 sh "cp -r ${remoteCacheDir}/* ./generated-files"
-                stash name: "generatedFiles", includes: 'generated-files/**/*', excludes: 'generated-files/**/*.sif'
+                dir('generated-files') {
+                    stash name: "generatedFiles", includes: '**/*', excludes: '**/*.sif'
+                }
             }
         }
 
