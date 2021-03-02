@@ -1,14 +1,4 @@
-/*
-key=$(singularity key list | grep $USERNAME | grep -oP "^\d+")
-echo "${PASSWORD}" | singularity sign -k ${key} ./test.sif
-singularity push ./test.sif library://7bits-register/collection/test.sif:latest
-*/
-/*
-Requirements:
-    - docker with buildx
-    - python3
-    - singularity
-*/
+def gv
 
 properties([
     parameters([
@@ -71,6 +61,34 @@ pipeline {
     agent {label "${params.AGENT}"}
 
     stages {
+        stage('CleanWorkspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
+
+        stage('Clone') {
+            environment {
+                TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
+            }
+            steps {
+                git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
+                sh 'mkdir deployment/env-utils-image/build'   
+            }
+        }
+
+
+        stage('Init') {
+            steps {
+                dir("deployment/env-utils-image") {
+                    script {
+                        gv = load "./scripts/aux.groovy"
+                    }
+                }
+            }
+        }
+
         stage('RefineInputeParams') {
             steps {
                 script {
@@ -91,15 +109,15 @@ pipeline {
 
                     imagePrefix = "${params.ARCH_FAMILY}"
                     builderImageName = dockerhubAccount + "/spack_custom_builder_${imagePrefix}:"
-                    builderImageName += generateBuilderTag(params.OS, params.TARGET_COMPILER).trim()
+                    builderImageName += gv.generateBuilderTag(params.OS, params.TARGET_COMPILER).trim()
 
 
-                    resImagePrefix = generateImageFileTag(params.OS,
-                                                          params.TARGET_COMPILER,
-                                                          params.TARGET_MPI, 
-                                                          params.TARGET_GPU,
-                                                          params.ARCH_FAMILY,
-                                                          params.ARCH).trim()
+                    resImagePrefix = gv.generateImageFileTag(params.OS,
+                                                             params.TARGET_COMPILER,
+                                                             params.TARGET_MPI, 
+                                                             params.TARGET_GPU,
+                                                             params.ARCH_FAMILY,
+                                                             params.ARCH).trim()
 
                     resBaseImageName = "seissol_base_${imagePrefix}"
                     resSingularityImage = resBaseImageName + ".sif"
@@ -121,12 +139,6 @@ pipeline {
         }
         
 
-        stage('CleanWorkspace') {
-            steps {
-                deleteDir()
-            }
-        }
-
         stage('DumpData') {
             steps {
                 script {
@@ -143,15 +155,6 @@ pipeline {
             }
         }
 
-        stage('Clone') {
-            environment {
-                TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
-            }
-            steps {
-                git branch: "${env.TRIMMED_BRANCH}", url: "${GIT_URL}"
-                sh 'mkdir deployment/env-utils-image/build'   
-            }
-        }
 
         stage('GenerateCustomSpack') {
             steps{
@@ -167,6 +170,8 @@ pipeline {
                 }
             }
         }
+
+
         stage('BuildCustomSpack') {
             steps {
                 script {
@@ -185,6 +190,8 @@ pipeline {
                 }
             }
         }
+
+
         stage('GenerateSeisSolEnv') {
             steps {
                 script {
@@ -237,6 +244,7 @@ pipeline {
             }
         }
 
+
         stage('GenerateSingularityDefFile') {
             steps{
                 script {
@@ -258,6 +266,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('PushToSingularity') {
             when {
@@ -291,88 +300,11 @@ pipeline {
             }
         }
     }
+
+
     post { 
         always {
-            // TODO: clean up
             sh 'echo "end..."'
         }
     }
-}
-
-// AUX functions
-String adjustToRegex(String str) {
-    return str.replaceAll("/","\\\\/");
-}
-
-
-String compose(String str1, String str2) {
-    return str1 + '_' + str2
-}
-
-String removeVersionAndConstrains(String spec) {
-    def components = spec.replace('@', '-').split('[\\^\\+]')
-    return components[0]
-}
-
-
-String generateBuilderTag(String os, String compiler, String arch = "") {
-    suffix = ""
-    if (arch.isAllWhitespace()) {
-        suffix = removeVersionAndConstrains(compiler)
-    }
-    else {
-        suffix = compose(arch, removeVersionAndConstrains(compiler))
-    }
-    return compose(os.replaceAll("[:/]", '-'), suffix)
-}
-
-String adjustMPI(String spec) {
-    gpuExpr = /(cuda)(@(\d+.\d+.\d+))?/
-    def matcher = (spec =~ gpuExpr)
-
-    String gpuSpec = ""
-    // check whether there cuda has been specified
-    if (matcher.count) {
-        gpuSpec = "_cuda"
-        // try to find cuda version
-        cudaVersionExpr = /\d+.\d+.\d+/
-        for (int i = 0; i < matcher.count; ++i) {
-            for (int j = 0; j < matcher[i].size(); ++j) {
-                if (matcher[i][j] ==~ cudaVersionExpr) {
-                    gpuSpec += "-" + matcher[i][j]
-                    break;
-                }
-            }
-        }
-    }
-
-    // Find MPI impl. and its version
-    def components = spec.replace('@', '-').split('[\\^\\+]')
-    String mpiSpec = components[0]
-    return mpiSpec + gpuSpec
-}
-
-
-void generateImageTag(String os, String compiler, String arch, String mpi) {
-    return compose(generateBuilderTag(os, compiler, arch), adjustMPI(mpi))
-}
-
-
-// new functions
-def getNameAndVersionFromSpackSpec(String spec) {
-    def nameAndVersion = spec.split("\\+")[0]
-    return nameAndVersion.replace('@', '-')
-}
-
-
-def generateImageFileTag(String os, String compiler, String mpi, String gpu, String archFamilty, String arch) {
-    String imageTag = compose(os, getNameAndVersionFromSpackSpec(compiler))
-    imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(mpi))
-    if (!gpu.isAllWhitespace()) {
-        imageTag = compose(imageTag, getNameAndVersionFromSpackSpec(gpu))
-    }
-    if (!arch.isAllWhitespace()) {
-        imageTag = compose(imageTag, arch)
-    }
-    return imageTag
 }

@@ -1,6 +1,13 @@
 pipeline {
     agent {label 'master'}
     stages {
+        stage('CleanWorkspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
+
         stage('Clone') {
             environment {
                 TRIMMED_BRANCH = sh(script:'echo ${GIT_BRANCH##origin/}', returnStdout: true).trim()
@@ -27,7 +34,7 @@ pipeline {
                         string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
                         string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
                         booleanParam(name: 'SINGULARITY_PUSH', value: true),
-                        booleanParam(name: 'FORCED_BUILD', value: true),
+                        booleanParam(name: 'FORCED_BUILD', value: false),
                         string(name: 'AGENT', value: "runner")
                         ]
                     }
@@ -73,7 +80,6 @@ pipeline {
 
     post { 
         always {
-            // TODO: clean up
             sh 'echo "end..."'
         }
     }
