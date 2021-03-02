@@ -26,16 +26,15 @@ pipeline {
                 axes {
                     axis {
                         name "CONFIG"
-                        values "ppc64le/cuda@10.1.243", "arm64/cuda@11.0.2", "amd64/cuda@10.1.243"
+                        values "amd64/cuda@10.1.243", "ppc64le/cuda@10.1.243", "arm64/cuda@11.0.2"
                     }
                 }
             }
 
             steps {
                 script {
-                    config = "${CONFIG}"
-                    platform = config.replaceFirst("/.+", "")
-                    gpu_lang = config.replaceFirst(".+/", "")
+                    platform = "${CONFIG}".replaceFirst("/.+", "")
+                    gpu_lang = "${CONFIG}".replaceFirst(".+/", "")
                 }
 
                 build job: 'env-utils-image', parameters: [
@@ -76,7 +75,7 @@ pipeline {
                 dir("${pathToGeneratedFiles}") {
                     unstash "generatedFiles"
                 }
-                
+
                 script {
                     changedFiles = sh (script: "git status --porcelain ./${pathToGeneratedFiles}", 
                                        returnStdout: true).trim()
