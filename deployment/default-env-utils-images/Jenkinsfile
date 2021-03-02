@@ -76,6 +76,55 @@ pipeline {
 
             //}
         //}
+
+        stage('CommitingGeneratedFiles') {
+            stage('StashingOnRunner') {
+                agent {label 'runner'}
+                steps {
+                    sh 'mkdir -p ./generated-files'
+                    sh "cp -r ${remoteCacheDir}/* ./generated-files"
+                    stash name: "generatedFiles", includes: 'generated-files/**/*', excludes: 'generated-files/**/*.sif'
+                }
+            }
+
+
+            stage('UnstashingOnMaster') {
+                steps {
+                    dir('image-files') {
+                        unstash "generatedFiles"
+                    }
+                    script {
+                        changedFiles = sh (script: "git status --porcelain ./image-files", returnStdout: true).trim()
+                    }
+                }
+            }
+
+
+            stage('CommitChanges') {
+                when {
+                    expression {
+                        !changedFiles.isAllWhitespace()
+                    }
+                }
+                steps {
+                    script {
+                        branchName = "${env.GIT_BRANCH}"
+                        branchName = branchName.replaceFirst(".+/", "")
+                        withCredentials([usernamePassword(credentialsId: 'github-repo',
+                                                        usernameVariable: 'GIT_USERNAME',
+                                                        passwordVariable: 'GIT_PASSWORD')]){
+                            sh """
+                            git branch -v
+                            git config --local credential.helper "!p() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; p"
+                            git add image-files
+                            git commit -m \"commited by Jenkins: build #${env.BUILD_ID}\"
+                            git push origin ${branchName}:${branchName}
+                            """
+                        }
+                    }
+                }
+            }
+        }
     }
 
     post { 

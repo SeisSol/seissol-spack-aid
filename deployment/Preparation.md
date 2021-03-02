@@ -125,3 +125,11 @@ You will probably need to disconnect and connect to `lrz_runner` from your Jenki
 sudo apt-get install python3 python3-dev python3-pip
 sudo pip3 install Jinja2
 ```
+
+#### Required Credentials
+Please, make sure that the following credentials are set up in your Jenkins server
+- singularity-user
+- docker-hub
+- github-repo
+
+Because of singularity, one needs to set up credentials of a privilege user for each agent/node/slave according to the following convention: `<agent_name>_id`

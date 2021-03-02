@@ -139,17 +139,18 @@ pipeline {
         }
         
 
-        stage('DumpData') {
+        stage('RecordeMetadata') {
             steps {
                 script {
+                    dockerVersion = sh (script: "docker --version", returnStdout: true).trim()
+                    singularityVersion = sh (script: "singularity --version", returnStdout: true).trim()
+                    machineConfig = sh (script: "uname -a", returnStdout: true).trim()
                     sh """
                         mkdir -p ${cacheSubDir} && rm -rf ${cacheSubDir}/*
-                        (echo "dockerhub: ${dockerhubAccount}" \
-                        && echo "base-spack-img: ${spackBaseImageName}" \
-                        && echo "custom-spack-img: ${builderImageName}" \
-                        && echo "res-image-name: ${resDockerImageName}" \
-                        && echo "res-image-file: ${resDockerImageFile}" \
-                        && echo "") > ${cacheSubDir}/info.txt
+                        (echo "${dockerVersion}" \
+                        && echo "${singularityVersion}" \
+                        && echo "config: ${machineConfig}" \
+                        && echo "") > ${cacheSubDir}/metadata
                     """
                 }
             }
