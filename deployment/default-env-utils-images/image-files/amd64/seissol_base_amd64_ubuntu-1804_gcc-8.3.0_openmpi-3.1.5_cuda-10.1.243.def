@@ -1,0 +1,9 @@
+Bootstrap: docker
+From: ravilmobile/seissol_base_amd64:ubuntu-1804_gcc-8.3.0_openmpi-3.1.5_cuda-10.1.243
+Stage: final
+
+%post
+    rm /etc/profile.d/*spack*.sh
+    cat /opt/spack-environment/seissol_env.sh >> $SINGULARITY_ENVIRONMENT
+    cat /opt/spack-environment/cuda_env.sh >> $SINGULARITY_ENVIRONMENT
+
