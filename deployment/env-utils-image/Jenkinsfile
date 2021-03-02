@@ -290,7 +290,10 @@ pipeline {
                         withCredentials([usernamePassword(credentialsId: 'singularity-user', 
                                                         usernameVariable: 'USERNAME', 
                                                         passwordVariable: 'PASSWORD')]) {
-                            key = sh (script: "singularity key list | grep $USERNAME | grep -oP \"^\\d+\"", returnStatus: true)
+                            deleteStatus = sh (script: "singularity delete -F library://${USERNAME}/collection/${resSingularityPushName}", 
+                                               returnStatus: true)
+                            key = sh (script: "singularity key list | grep $USERNAME | grep -oP \"^\\d+\"",
+                                      returnStatus: true)
                             sh """
                             echo "${PASSWORD}" | singularity sign -k ${key} ./${resSingularityImage}
                             singularity push ./${resSingularityImage} library://${USERNAME}/collection/${resSingularityPushName}
