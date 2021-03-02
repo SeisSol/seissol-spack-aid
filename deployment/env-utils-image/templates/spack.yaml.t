@@ -2,7 +2,7 @@ spack:
   definitions:
   - compilers: [{{ compiler }}]
   - mpis: [{{ mpi }}]
-  - targets: [target={%+ if arch is defined and arch != None %}{{ arch }}{% else %}{{ arch_family }}{% endif %}]
+  - targets: [target={% if arch is defined and arch != None %}{{ arch }}{% else %}{{ arch_family }}{% endif %}]
   - packages: 
       - seissol-env+mpi+asagi~building_tools
       - seissol-utils
@@ -12,7 +12,7 @@ spack:
     - [\$compilers]
     - [arch={{ arch_family }}]
   - matrix:
-    - [\$mpis, cmake@3.16.2{%+ if gpu is defined and gpu != None %}, {{ gpu }}{% endif %}]
+    - [\$mpis, cmake@3.16.2{% if gpu is defined and gpu != None %}, {{ gpu }}{% endif %}]
     - [\$targets]
     - [\$%compilers]
   - matrix:
