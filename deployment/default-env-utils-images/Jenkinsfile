@@ -21,7 +21,7 @@ pipeline {
         }
 
 
-        stage('Build') {
+        stage('BuildAll') {
             matrix {
                 axes {
                     axis {
@@ -29,27 +29,30 @@ pipeline {
                         values "amd64/cuda@10.1.243", "ppc64le/cuda@10.1.243", "arm64/cuda@11.0.2"
                     }
                 }
-            }
+                stages {
+                    stage('Build') {
+                        steps {
+                            script {
+                                platform = "${CONFIG}".replaceFirst("/.+", "")
+                                gpu_lang = "${CONFIG}".replaceFirst(".+/", "")
+                            }
 
-            steps {
-                script {
-                    platform = "${CONFIG}".replaceFirst("/.+", "")
-                    gpu_lang = "${CONFIG}".replaceFirst(".+/", "")
+                            build job: 'env-utils-image', parameters: [
+                            string(name: 'OS', value: 'ubuntu-1804'),
+                            string(name: 'SPACK_VERSION', value: 'latest'),
+                            string(name: 'ARCH_FAMILY', value: "${platform}"),
+                            string(name: 'ARCH', value: ''),
+                            string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
+                            string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
+                            string(name: 'TARGET_GPU', value: "${gpu_lang}"),
+                            string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
+                            booleanParam(name: 'SINGULARITY_PUSH', value: true),
+                            booleanParam(name: 'FORCED_BUILD', value: false),
+                            string(name: 'AGENT', value: "runner")
+                            ]
+                        }
+                    }
                 }
-
-                build job: 'env-utils-image', parameters: [
-                string(name: 'OS', value: 'ubuntu-1804'),
-                string(name: 'SPACK_VERSION', value: 'latest'),
-                string(name: 'ARCH_FAMILY', value: "${platform}"),
-                string(name: 'ARCH', value: ''),
-                string(name: 'TARGET_COMPILER', value: 'gcc@8.3.0'),
-                string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
-                string(name: 'TARGET_GPU', value: "${gpu_lang}"),
-                string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
-                booleanParam(name: 'SINGULARITY_PUSH', value: true),
-                booleanParam(name: 'FORCED_BUILD', value: false),
-                string(name: 'AGENT', value: "runner")
-                ]
             }
         }
 

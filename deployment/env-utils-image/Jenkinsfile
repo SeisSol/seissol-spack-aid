@@ -136,6 +136,7 @@ pipeline {
                     }
 
                     cacheSubDir = "${params.CACHE_DIR}/${params.ARCH_FAMILY}"
+                    sh "mkdir -p ${cacheSubDir} && rm -rf ${cacheSubDir}/*"
                 }
             }
         }
@@ -297,7 +298,6 @@ pipeline {
                     singularityVersion = sh(script: "singularity --version", returnStdout: true).trim()
                     spackVersion = sh(script: "docker run --rm ${builderImageName} --version", returnStdout: true).trim()
                     sh """
-                        mkdir -p ${cacheSubDir} && rm -rf ${cacheSubDir}/*
                         (echo "config: ${machineConfig}" \
                         && echo "${dockerVersion}" \
                         && echo "${singularityVersion}" \
