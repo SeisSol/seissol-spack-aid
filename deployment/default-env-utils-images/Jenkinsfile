@@ -33,7 +33,7 @@ pipeline {
                         string(name: 'TARGET_MPI', value: 'openmpi@3.1.5+cuda'),
                         string(name: 'TARGET_GPU', value: 'cuda@10.1.243'),
                         string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
-                        booleanParam(name: 'SINGULARITY_PUSH', value: true),
+                        booleanParam(name: 'SINGULARITY_PUSH', value: false),
                         booleanParam(name: 'FORCED_BUILD', value: false),
                         string(name: 'AGENT', value: "runner")
                         ]
@@ -89,11 +89,12 @@ pipeline {
 
         stage('UnstashingOnMaster') {
             steps {
-                dir('image-files') {
+                dir('deployment/default-env-utils-images/image-files') {
                     unstash "generatedFiles"
                 }
                 script {
-                    changedFiles = sh (script: "git status --porcelain ./image-files", returnStdout: true).trim()
+                    changedFiles = sh (script: "git status --porcelain ./deployment/default-env-utils-images/image-files", 
+                                       returnStdout: true).trim()
                 }
             }
         }
