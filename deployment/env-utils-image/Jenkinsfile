@@ -139,24 +139,6 @@ pipeline {
         }
         
 
-        stage('RecordeMetadata') {
-            steps {
-                script {
-                    dockerVersion = sh (script: "docker --version", returnStdout: true).trim()
-                    singularityVersion = sh (script: "singularity --version", returnStdout: true).trim()
-                    machineConfig = sh (script: "uname -a", returnStdout: true).trim()
-                    sh """
-                        mkdir -p ${cacheSubDir} && rm -rf ${cacheSubDir}/*
-                        (echo "${dockerVersion}" \
-                        && echo "${singularityVersion}" \
-                        && echo "config: ${machineConfig}" \
-                        && echo "") > ${cacheSubDir}/metadata
-                    """
-                }
-            }
-        }
-
-
         stage('GenerateCustomSpack') {
             steps{
                 dir("deployment/env-utils-image") {               
@@ -300,6 +282,25 @@ pipeline {
                             """
                         }
                     }
+                }
+            }
+        }
+
+        stage('RecordMetadata') {
+            steps {
+                script {
+                    machineConfig = sh(script: "uname -a", returnStdout: true).trim()
+                    dockerVersion = sh(script: "docker --version", returnStdout: true).trim()
+                    singularityVersion = sh(script: "singularity --version", returnStdout: true).trim()
+                    spackVersion = sh(script: "docker run --rm ${builderImageName} --version", returnStdout: true).trim()
+                    sh """
+                        mkdir -p ${cacheSubDir} && rm -rf ${cacheSubDir}/*
+                        (echo "config: ${machineConfig}" \
+                        && echo "${dockerVersion}" \
+                        && echo "${singularityVersion}" \
+                        && echo "spack: ${spackVersion}" \
+                        && echo "") > ${cacheSubDir}/metadata
+                    """
                 }
             }
         }
