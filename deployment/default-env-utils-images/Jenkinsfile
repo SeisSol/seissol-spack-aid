@@ -89,11 +89,14 @@ pipeline {
 
         stage('UnstashingOnMaster') {
             steps {
-                dir('deployment/default-env-utils-images/image-files') {
+                script {
+                    pathToGeneratedFiles = "deployment/default-env-utils-images/image-files"
+                }
+                dir("${pathToGeneratedFiles}") {
                     unstash "generatedFiles"
                 }
                 script {
-                    changedFiles = sh (script: "git status --porcelain ./deployment/default-env-utils-images/image-files", 
+                    changedFiles = sh (script: "git status --porcelain ./${pathToGeneratedFiles}", 
                                        returnStdout: true).trim()
                 }
             }
@@ -116,7 +119,7 @@ pipeline {
                         sh """
                         git branch -v
                         git config --local credential.helper "!p() { echo username=\\$GIT_USERNAME; echo password=\\$GIT_PASSWORD; }; p"
-                        git add image-files
+                        git add ${pathToGeneratedFiles}
                         git commit -m \"commited by Jenkins: build #${env.BUILD_ID}\"
                         git push origin ${branchName}:${branchName}
                         """
