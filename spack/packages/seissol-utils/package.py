@@ -34,6 +34,7 @@ class SeissolUtils(Package):
 
     variant('gmsh_gui', default=False, description="enables gui support for gmsh")
     variant('paraview', default=False, description="installs Paraview for visualization")
+    variant('cross_arch_build', default=False, description="installs via cross architectural build")
 
     resource(name='cookbook', 
              git='https://github.com/daisy20170101/SeisSol_Cookbook',
@@ -53,7 +54,12 @@ class SeissolUtils(Package):
 
     depends_on("gmsh+hdf5+metis+netgen", when='~gmsh_gui') 
     depends_on("gmsh+hdf5+metis+fltk+netgen", when='+gmsh_gui')
-    depends_on("openblas@:0.3.12", when="%gcc@:10.1.99")
+
+    # openblas cannot detect a correct architecture during a cross-arch build
+    # and thus we have to switch to netlib blas
+    depends_on("netlib-lapack", when="+cross_arch_build")
+    depends_on("openblas@:0.3.12", when="%gcc@:10.1.99 ~cross_arch_build")
+
     depends_on("netgen+metis")
 
     depends_on("paraview+hdf5+qt", when="+paraview") 

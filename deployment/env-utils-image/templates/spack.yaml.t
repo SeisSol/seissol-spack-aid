@@ -5,7 +5,7 @@ spack:
   - targets: [target={% if arch is defined and arch != None %}{{ arch }}{% else %}{{ arch_family }}{% endif %}]
   - packages: 
       - seissol-env+mpi+asagi~building_tools
-      - seissol-utils
+      - seissol-utils+cross_arch_build
  
   specs:
   - matrix:

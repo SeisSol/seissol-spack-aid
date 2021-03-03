@@ -92,8 +92,10 @@ or execute the following:
 newgrp docker
 ```
 
-## Enable Docker Buildx
+## Enable Docker Buildx (qemu-v5.0.1)
 ```
+sudo apt-get install qemu binfmt-support qemu-user-static
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes 
 docker run --privileged --rm tonistiigi/binfmt --install all
 ```
 ##### Create your own custom builder
