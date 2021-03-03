@@ -53,7 +53,7 @@ class SeissolUtils(Package):
 
     depends_on("gmsh+hdf5+metis+netgen", when='~gmsh_gui') 
     depends_on("gmsh+hdf5+metis+fltk+netgen", when='+gmsh_gui')
-    depends_on("openblas@:0.3.12", when="%gcc@:10.1.99 target=ppc64le:")
+    depends_on("openblas@:0.3.12", when="%gcc@:10.1.99")
     depends_on("netgen+metis")
 
     depends_on("paraview+hdf5+qt", when="+paraview") 
