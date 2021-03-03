@@ -1,3 +1,17 @@
+properties([
+    parameters([
+        string(
+            defaultValue: 'runner', 
+            description: 'agent name which tells where to run a job', 
+            name: 'AGENT',
+            trim: true),
+        booleanParam(
+            defaultValue: true, 
+            description: 'force docker to build images without using caching', 
+            name: 'FORCED_BUILD')
+    ])
+])
+
 pipeline {
     agent {label 'master'}
     stages {
@@ -47,8 +61,8 @@ pipeline {
                             string(name: 'TARGET_GPU', value: "${gpu_lang}"),
                             string(name: 'CACHE_DIR', value: "${remoteCacheDir}"),
                             booleanParam(name: 'SINGULARITY_PUSH', value: true),
-                            booleanParam(name: 'FORCED_BUILD', value: false),
-                            string(name: 'AGENT', value: "runner")
+                            booleanParam(name: 'FORCED_BUILD', value: "${env.FORCED_BUILD}"),
+                            string(name: 'AGENT', value: "${env.AGENT}")
                             ]
                         }
                     }
@@ -58,7 +72,7 @@ pipeline {
 
 
         stage('StashingOnRunner') {
-            agent {label 'runner'}
+            agent {label "${env.AGENT}"}
             steps {
                 sh 'mkdir -p ./generated-files'
                 sh "cp -r ${remoteCacheDir}/* ./generated-files"
