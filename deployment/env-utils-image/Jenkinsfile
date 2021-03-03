@@ -295,7 +295,7 @@ pipeline {
                 script {
                     machineConfig = sh(script: "uname -a", returnStdout: true).trim()
                     dockerVersion = sh(script: "docker --version", returnStdout: true).trim()
-                    buildxVersion = sh(script: "docker buildx --version", returnStdout: true).trim()
+                    buildxVersion = sh(script: "docker buildx version", returnStdout: true).trim()
                     singularityVersion = sh(script: "singularity --version", returnStdout: true).trim()
                     spackVersion = sh(script: "docker run --rm ${builderImageName} --version", returnStdout: true).trim()
                     sh """

@@ -47,8 +47,8 @@ RUN compiler_suite=$(echo {{ compiler }} | sed -E 's/(\w*)@.*/\1/') \
 
 # install seissol spack-installation scripts
 RUN mkdir spack_support spack_support/packages /workspace
-COPY ./spack/repo.yaml spack_support
-COPY ./spack/packages ./spack_support/packages
+ADD ./spack/repo.yaml spack_support
+ADD ./spack/packages ./spack_support/packages
 RUN spack repo add spack_support
 
 #NOTE: the current version of spack doesn't allow to install a compiler
