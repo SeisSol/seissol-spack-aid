@@ -50,7 +50,7 @@ pipeline {
                                 platform = "${CONFIG}".replaceFirst("/.+", "")
                                 gpu_lang = "${CONFIG}".replaceFirst(".+/", "")
                             }
-
+                            sh "echo ${platform} - ${gpu_lang}"
                             build job: 'env-utils-image', parameters: [
                             string(name: 'OS', value: 'ubuntu-1804'),
                             string(name: 'SPACK_VERSION', value: 'latest'),
