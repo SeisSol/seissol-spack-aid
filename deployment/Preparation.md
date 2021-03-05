@@ -114,9 +114,10 @@ sudo apt-get install gcc g++ make
 ```
 Follow the official [installation guide](https://sylabs.io/guides/3.7/user-guide/quick_start.html) to install Singularity 3.7
 
-#### Configure Singulairty Public key for signing images
+#### Configure Singulairty Public key for signing images and access token
 ```
 singularity key newpair
+singularity remote login
 ```
 
 ## Final steps
