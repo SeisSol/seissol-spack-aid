@@ -169,7 +169,7 @@ pipeline {
                         docker login -u ${USERNAME} -p ${PASSWORD}
                         docker buildx build ${extraDockerCommands} \
                                             -t ${builderImageName} \
-                                            --platform ${params.ARCH_FAMILY} \
+                                            --platform linux/${params.ARCH_FAMILY} \
                                             --file ${imagePath} . --push
                         """
                     }
@@ -219,9 +219,11 @@ pipeline {
                                                           usernameVariable: 'USERNAME', 
                                                           passwordVariable: 'PASSWORD')]) {
                         sh """
-                        docker build ${extraDockerCommands} -t ${resDockerImageName} --file ${resDockerImageFile} .
                         docker login -u ${USERNAME} -p ${PASSWORD}
-                        docker push ${resDockerImageName}
+                        docker buildx build ${extraDockerCommands} \
+                                            -t ${resDockerImageName} \
+                                            --platform linux/${params.ARCH_FAMILY} \
+                                            --file ${resDockerImageFile} . --push
                         """
 
                         }

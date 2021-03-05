@@ -6,7 +6,7 @@ properties([
             name: 'AGENT',
             trim: true),
         booleanParam(
-            defaultValue: true, 
+            defaultValue: false, 
             description: 'force docker to build images without using caching', 
             name: 'FORCED_BUILD')
     ])
@@ -38,8 +38,8 @@ pipeline {
         stage('BuildAll') {
             steps {
                 script {
-                    String[][] configList = [["amd64", "cuda@10.1.243"], 
-                                             ["ppc64le", "cuda@10.1.243"], 
+                    String[][] configList = [["ppc64le", "cuda@10.1.243"], 
+                                             ["amd64", "cuda@10.1.243"],
                                              ["arm64", "cuda@11.0.2"]]
 
                     for(config in configList) {
