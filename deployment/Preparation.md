@@ -3,7 +3,7 @@ This guide provides information how to configure a new jenkins-slave on lrz-clou
 
 # Let's get started
 
-## Create a new instance of LRZ cloud
+## Create a new instance on LRZ cloud
 Follow the [offical LRZ tutorial](https://doku.lrz.de/display/PUBLIC/Create+a+VM) about how to create and configure an instance. Pick up `Ubuntu-18.04-LTS-bionic` image and make sure your instance has at least 80GB attached. Please, don't forget to `Associate Floating IP` once your instance has been instantiated.
 
 
