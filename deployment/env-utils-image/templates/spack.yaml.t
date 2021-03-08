@@ -40,8 +40,6 @@ spack:
       - python3
       - python3-dev
       - python3-pip
-      - python3-numpy
-      - scons
       - pkg-config
       - make
       - git
@@ -71,4 +69,6 @@ spack:
             && update-alternatives --install /usr/bin/g++ g++ $compiler_path/bin/g++ 20 \
             && update-alternatives --install /usr/bin/gfortran gfortran $compiler_path/bin/gfortran 20 \
             && ranlib $compiler_path/lib/gcc/*/*/libgcc.a \
-            && mkdir /workspace
+            && pip3 install --upgrade cython wheel \
+            && pip3 install scons numpy \
+            && mkdir /workspace /usr_mount
