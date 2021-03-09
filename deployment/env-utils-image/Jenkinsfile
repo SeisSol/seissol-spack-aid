@@ -185,7 +185,7 @@ pipeline {
                         sh """
                         python3 ./scripts/concretize_spack_spec.py \
                                      --compiler ${params.TARGET_COMPILER} \
-                                     --mpi ${params.TARGET_MPI} \
+                                     --mpi \"${params.TARGET_MPI}\" \
                                      --gpu ${params.TARGET_GPU} \
                                      --builder_image ${builderImageName} \
                                      --target_image ${params.OS} \

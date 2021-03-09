@@ -26,38 +26,6 @@ String generateBuilderTag(String os, String compiler, String arch = "") {
 }
 
 
-String adjustMPI(String spec) {
-    gpuExpr = /(cuda)(@(\d+.\d+.\d+))?/
-    def matcher = (spec =~ gpuExpr)
-
-    String gpuSpec = ""
-    // check whether there cuda has been specified
-    if (matcher.count) {
-        gpuSpec = "_cuda"
-        // try to find cuda version
-        cudaVersionExpr = /\d+.\d+.\d+/
-        for (int i = 0; i < matcher.count; ++i) {
-            for (int j = 0; j < matcher[i].size(); ++j) {
-                if (matcher[i][j] ==~ cudaVersionExpr) {
-                    gpuSpec += "-" + matcher[i][j]
-                    break;
-                }
-            }
-        }
-    }
-
-    // Find MPI impl. and its version
-    def components = spec.replace('@', '-').split('[\\^\\+]')
-    String mpiSpec = components[0]
-    return mpiSpec + gpuSpec
-}
-
-
-void generateImageTag(String os, String compiler, String arch, String mpi) {
-    return compose(generateBuilderTag(os, compiler, arch), adjustMPI(mpi))
-}
-
-
 def getNameAndVersionFromSpackSpec(String spec) {
     def nameAndVersion = spec.split("\\+")[0]
     return nameAndVersion.replace('@', '-')
