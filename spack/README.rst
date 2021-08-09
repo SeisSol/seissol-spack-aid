@@ -43,7 +43,7 @@ Linux distribution has *build-essential* packages.
 
 .. code-block:: bash
 
-  apt-get install git python curl build-essential
+  apt-get install git python python-dev python3 python3-dev curl build-essential
 
 
 However, most UNIX-kind operating systems come with these packages 
@@ -52,7 +52,14 @@ pre-installed. Now, let's install Spack.
 .. code-block:: bash
 
   cd $HOME
-  git clone https://github.com/spack/spack.git
+  git clone --depth 1 --branch <tag_name> https://github.com/spack/spack.git
+
+where **<tag_name>** is a tag of a particular stable version of Spack. Please, have a look
+at Spack `releases <https://github.com/spack/spack/releases>`_. For example:
+
+.. code-block:: bash
+
+  git clone --depth 1 --branch v0.16.1 https://github.com/spack/spack.git
 
 
 Append you *.bashrc* to have Spack avaliable all the time
@@ -62,33 +69,25 @@ Append you *.bashrc* to have Spack avaliable all the time
   cd spack  
   echo "export SPACK_ROOT=$PWD" >> $HOME/.bashrc
   echo "export PATH=\$SPACK_ROOT/bin:\$PATH" >> $HOME/.bashrc
-  cd $HOME
 
 
 Close and open your terminal to make sure that the changes have been applied. 
 For the next step, you need to acquire Spack scripts for SeisSol. 
-Download SeisSol from `here <https://github.com/SeisSol/SeisSol>`_ and go to 
-the root directory of the application.
+Download SeisSol Spack Support from `here <https://github.com/SeisSol/seissol-spack-aid.git>`_.
 
 .. code-block:: bash
 
-  git clone https://github.com/SeisSol/SeisSol.git
-  cd SeisSol
-
+  cd $HOME
+  git clone https://github.com/SeisSol/seissol-spack-aid.git
 
 To make SeisSol installation scripts visible inside of Spack, one has 
-to add them to Spack repositories. We recommend to install our scripts 
-into a separate directory to avoid problems with dangling files inside of 
-Spack in case if you decide to delete the current SeisSol repository.
+to add them to Spack repositories.
 
 
 .. code-block:: bash
 
-  cd spack_support
-  mkdir build && cd build
-  cmake .. -DCMAKE_INSTALL_PREFIX=<install_dir>
-  make install
-  spack repo add <install_dir>/spack_support
+  cd $HOME/seissol-spack-aid
+  spack repo add ./spack
 
 
 To make sure that everything went well, query avaliable packages in Spack.
@@ -103,13 +102,12 @@ To make sure that everything went well, query avaliable packages in Spack.
 If you can see an output similar to the one above then we are ready to proceed!
 
 Please, keep in mind that we update installation scripts from time to time. 
-Therefore, you have to remove old ones from spack as following:
+Therefore, sometimes you may need to update them:
 
 .. code-block:: bash
 
-  spack repo remove spack_support
-
-Don't forget to add new scripts into the Spack in the same way as we did above.
+  cd $HOME/seissol-spack-aid
+  git pull origin master
 
 
 Getting Started
@@ -147,6 +145,25 @@ Type the following to see all compilers avaliable for Spack
 
   spack compiler list
 
+By default, you can see all your compilers in **compilers.yaml** file
+
+.. code-block:: bash
+
+  cat $HOME/.spack/linux/compilers.yaml
+
+Make sure that you have C/C++ and Fortran compilers in your compiler collection.
+For example:
+
+.. code-block:: bash
+    
+    ...
+    paths:
+      cc: /usr/bin/gcc
+      cxx: /usr/bin/g++
+      f77: /usr/bin/gfortran
+      fc: /usr/bin/gfortran
+    ...
+
 
 Environment Modules
 -------------------
@@ -181,6 +198,14 @@ You can also look at a list of installed software as following:
 
   # the most detailed list (including install-options of all packages and their deps.)
   spack find -v -d
+
+Alternatively, you can also use native spack commands. 
+
+.. code-block:: bash
+
+  spack load <package>
+  spack unload <package>
+  spack find --loaded
 
 
 SeisSol-Env
@@ -250,14 +275,15 @@ Usage
 .. code-block:: bash
 
   module load seissol-env-develop-<compiler>-<hash>
+  # or: spack load seissol-env@develop
 
   # if you compile seissol-env with a compiler installed with Spack
   # you may need to load that compiler as well
   module load <compiler>
+  # or: spack load gcc@<version>
 
 
-After that, you can compile SeisSol using either CMake or 
-:ref:`Scons <compiling-seissol>`.
+After that, you can compile SeisSol using CMake.
 
 
 SeisSol-Utils
@@ -293,8 +319,8 @@ Examples
   # 1. essential packages compiled with gcc compiler suite
   spack install seissol-utils %gcc@8.3.0
 
-  # 2. with benchmarks and gmsh gmsh GUI
-  spack install seissol-utils+gmsh_gui+benchmarks %gcc@8.3.0
+  # 2. with cookbook and benchmarks and gmsh gmsh GUI
+  spack install seissol-utils+gmsh_gui+cookbook+benchmarks %gcc@8.3.0
 
   # 3. with gmsh GUI, paraview and scons
   spack install seissol-utils+gmsh_gui+paraview+building_tools %gcc@8.3.0
@@ -308,6 +334,8 @@ Usage
 .. code-block:: bash
 
   module load seissol-utils-develop-<compiler>-<hash>
+  # or: spack load seissol-utils@develop
+
 
   # to access the Cookbook
   cd $COOKBOOK
