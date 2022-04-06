@@ -51,9 +51,10 @@ class SeissolUtils(Package):
     depends_on('pumgen')
     depends_on('glm@0.9.7.1')
     depends_on('proj@4.9.2')
+    depends_on('eigen@3.4.0')
 
-    depends_on("gmsh+hdf5+metis+netgen", when='~gmsh_gui') 
-    depends_on("gmsh+hdf5+metis+fltk+netgen", when='+gmsh_gui')
+    depends_on("gmsh+hdf5+metis+netgen~med", when='~gmsh_gui')
+    depends_on("gmsh+hdf5+metis+fltk+netgen~med", when='+gmsh_gui')
 
     # openblas cannot detect a correct architecture during a cross-arch build
     # and thus we have to switch to netlib blas
