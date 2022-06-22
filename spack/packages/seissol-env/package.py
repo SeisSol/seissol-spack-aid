@@ -41,8 +41,8 @@ class SeissolEnv(BundlePackage):
     depends_on('asagi ~mpi ~mpi3', when="+asagi ~mpi")
     depends_on('asagi +mpi +mpi3', when="+asagi +mpi")
 
-    depends_on('easi@1.2.0~asagi jit=impalajit +lua', when="~asagi")
-    depends_on('easi@1.2.0+asagi jit=impalajit +lua', when="+asagi")
+    depends_on('easi@1.2.0~asagi jit=impalajit,lua', when="~asagi")
+    depends_on('easi@1.2.0+asagi jit=impalajit,lua', when="+asagi")
     
     depends_on('intel-mkl threads=none', when="extra_blas=mkl")
     depends_on('openblas threads=none', when="extra_blas=openblas")

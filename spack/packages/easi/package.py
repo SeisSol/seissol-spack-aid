@@ -25,15 +25,13 @@ class Easi(CMakePackage):
 
     variant('asagi', default=True, description='build with ASAGI support')
     variant('jit', default='impalajit', description='build with JIT support',
-            values=('impalajit', 'impalajit-llvm'), multi=False)
-    variant('lua', default=False, description='build with lua support')
+            values=('impalajit', 'lua'), multi=True)
 
     depends_on('asagi +mpi +mpi3', when='+asagi')
     depends_on('yaml-cpp@0.6.2')
 
-
-    depends_on('impalajit')
-    depends_on('lua@5.3.2', when='+lua')
+    depends_on('impalajit', when='jit=impalajit' or 'jit=impalajit,lua')
+    depends_on('lua@5.3.2', when='jit=lua' or 'jit=impalajit,lua')
 
     conflicts('jit=impalajit', when='target=aarch64:')
     conflicts('jit=impalajit', when='target=ppc64:')
@@ -44,16 +42,13 @@ class Easi(CMakePackage):
 
         args = []
         args.append(self.define_from_variant('ASAGI', 'asagi'))
-
-        with_impala = 'jit=impalajit' in self.spec
-        with_impala |= 'jit=impalajit-llvm' in self.spec
-        if with_impala:
+        if 'impalajit' in self.spec.variants['jit'].value:
             args.append(self.define('IMPALAJIT', True))
-            backend_type = 'llvm' if 'jit=impalajit-llvm' in self.spec else 'original'
-            args.append(self.define('IMPALAJIT_BACKEND', backend_type))
-
-        if '+lua' in self.spec:
+            args.append(self.define('IMPALAJIT_BACKEND', 'original'))
+        else:
             args.append(self.define('IMPALAJIT', False))
+        
+        if 'lua' in self.spec.variants['jit'].value:
             args.append(self.define('LUA', True))
 
         return args
