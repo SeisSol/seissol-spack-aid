@@ -30,13 +30,15 @@ class Easi(CMakePackage):
     depends_on('asagi +mpi +mpi3', when='+asagi')
     depends_on('yaml-cpp@0.6.2')
 
-    depends_on('impalajit', when='jit=impalajit' or 'jit=impalajit,lua')
-    depends_on('lua@5.3.2', when='jit=lua' or 'jit=impalajit,lua')
+    for variant in ['jit=impalajit', 'jit=impalajit,lua']:
+        depends_on('impalajit', when=variant)
+        conflicts(variant, when='target=aarch64:')
+        conflicts(variant, when='target=ppc64:')
+        conflicts(variant, when='target=ppc64le:')
+        conflicts(variant, when='target=riscv64:')
 
-    conflicts('jit=impalajit', when='target=aarch64:')
-    conflicts('jit=impalajit', when='target=ppc64:')
-    conflicts('jit=impalajit', when='target=ppc64le:')
-    conflicts('jit=impalajit', when='target=riscv64:')
+    for variant in ['jit=lua', 'jit=impalajit,lua']:
+        depends_on('lua@5.3.2', when=variant)
 
     def cmake_args(self):
 
