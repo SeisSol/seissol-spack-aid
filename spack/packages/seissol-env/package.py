@@ -43,7 +43,12 @@ class SeissolEnv(BundlePackage):
 
     depends_on('easi@1.2.0~asagi jit=impalajit,lua', when="~asagi")
     depends_on('easi@1.2.0+asagi jit=impalajit,lua', when="+asagi")
-    
+
+    # Should not be necessary but else we get
+    # Could not find a package configuration file provided by "impalajit"
+    # When building seissol (using the module)
+    depends_on('impalajit')
+
     depends_on('intel-mkl threads=none', when="extra_blas=mkl")
     depends_on('openblas threads=none', when="extra_blas=openblas")
     depends_on('blis threads=none', when="extra_blas=blis")
