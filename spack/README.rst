@@ -326,7 +326,7 @@ Examples
   spack install seissol-utils+gmsh_gui+paraview+building_tools %gcc@8.3.0 ^parmetis+int64
 
   # 4. essential packages with simmetrix support for pumgen
-  spack install seissol-utils %gcc@8.3.0 ^pumgen+simmetrix_support ^parmetis+int64
+  spack install seissol-utils %gcc@8.3.0 ^pumgen+with_simmetrix ^parmetis+int64
 
 Usage
 ~~~~~
