@@ -7,7 +7,7 @@
 from spack import *
 
 
-class PyPspamm(PythonPackage):
+class PyPspamm(Package):
     """Code Generator for Small Sparse Matrix Multiplication"""
 
     homepage = "https://github.com/SeisSol/PSpaMM/blob/master/README.md"
