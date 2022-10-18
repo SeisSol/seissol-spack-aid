@@ -107,5 +107,10 @@ class SeissolEnv(BundlePackage):
         env.prepend_path('PYTHONPATH', ":".join(filter(None, pythonpath)))
         
         # add pspamm while loading seissol-env
-        env.prepend_path('PYTHONPATH', self.spec.dependencies_dict()['pspamm'].spec.prefix.pspamm)
-        env.prepend_path('PATH', self.spec.dependencies_dict()['pspamm'].spec.prefix.pspamm)
+        try:
+            pspamm_prefix = self.spec.dependencies_dict()['py-pspamm'].spec.prefix.pspamm
+        except AttributeError:
+            # for spack v0.18.0+
+            pspamm_prefix = self.spec.edges_to_dependencies(name='py-pspamm')[0].spec.prefix.pspamm
+        env.prepend_path('PYTHONPATH', pspamm_prefix)
+        env.prepend_path('PATH', pspamm_prefix)
