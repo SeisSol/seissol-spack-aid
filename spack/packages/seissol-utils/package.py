@@ -139,24 +139,27 @@ class SeissolUtils(Package):
         install_tree(join_path(self.stage.source_path, 'postprocessing/visualization/receiver'), prefix.viz.receiver)
     
     def setup_run_environment(self, env):
-        dependencies = self.spec.dependencies_dict()
-        bins = [self.spec.prefix.gmsh2gambit, 
-                self.spec.prefix.cube_c, 
-                self.spec.prefix.rconv,
-                dependencies["pumgen"].spec.prefix.bin,
-                dependencies["gmsh"].spec.prefix.bin]
+        pumgen = self.spec.dependencies(name='pumgen')[0]
+        gmsh = self.spec.dependencies(name='gmsh')[0]
+        bins = [self.prefix.gmsh2gambit,
+                self.prefix.cube_c,
+                self.prefix.rconv,
+                pumgen.prefix.bin,
+                gmsh.prefix.bin]
 
         if "+paraview" in self.spec:
-            bins.append(dependencies["paraview"].spec.previx.bin)
+            paraview = self.spec.dependencies(name='paraview')[0]
+            bins.append(paraview.previx.bin)
 
         env.prepend_path('PATH', ":".join(bins))
 
         if "+cookbook" in self.spec:
-            env.set('COOKBOOK', self.spec.prefix.cookbook)
+            env.set('COOKBOOK', self.prefix.cookbook)
 
 
         if "+benchmarks" in self.spec:
-            env.set('BENCHMARKS', self.spec.prefix.benchmarks)
+            env.set('BENCHMARKS', self.prefix.benchmarks)
 
-        env.prepend_path('PATH', self.spec.prefix.viz.receiver.bin)
-        env.prepend_path('PYTNONPATH', self.spec.prefix.viz.receiver.src)
+        env.prepend_path('PATH', self.prefix.viz.receiver.bin)
+        env.prepend_path('PYTNONPATH', self.prefix.viz.receiver.src)
+
