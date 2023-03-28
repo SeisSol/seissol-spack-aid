@@ -36,10 +36,10 @@ class SeissolUtils(Package):
     variant('paraview', default=False, description="installs Paraview for visualization")
     variant('cross_arch_build', default=False, description="installs via cross architectural build")
 
-    resource(name='cookbook', 
-             git='https://github.com/daisy20170101/SeisSol_Cookbook',
-             when='+cookbook',
-             placement='cookbook')
+    resource(name='examples', 
+             git='https://github.com/SeisSol/Examples',
+             when='+examples',
+             placement='examples')
 
     resource(name='benchmarks', 
              git='https://gitlab.lrz.de/seissol.org/benchmarks',
@@ -115,8 +115,8 @@ class SeissolUtils(Package):
 
     def install(self, spec, prefix):
 
-        if "+cookbook" in spec:
-            install_tree("cookbook", prefix.cookbook)
+        if "+examples" in spec:
+            install_tree("examples", prefix.examples)
 
         if "+benchmarks" in spec:
             install_tree("benchmarks", prefix.benchmarks)
@@ -139,8 +139,8 @@ class SeissolUtils(Package):
         install_tree(join_path(self.stage.source_path, 'postprocessing/visualization/receiver'), prefix.viz.receiver)
     
     def setup_run_environment(self, env):
-        pumgen = self.spec.dependencies(name='pumgen')[0]
-        gmsh = self.spec.dependencies(name='gmsh')[0]
+        pumgen = self.spec['pumgen']
+        gmsh = self.spec['gmsh']
         bins = [self.prefix.gmsh2gambit,
                 self.prefix.cube_c,
                 self.prefix.rconv,
@@ -148,13 +148,13 @@ class SeissolUtils(Package):
                 gmsh.prefix.bin]
 
         if "+paraview" in self.spec:
-            paraview = self.spec.dependencies(name='paraview')[0]
-            bins.append(paraview.previx.bin)
+            paraview = self.spec['paraview']
+            bins.append(paraview.prefix.bin)
 
         env.prepend_path('PATH', ":".join(bins))
 
-        if "+cookbook" in self.spec:
-            env.set('COOKBOOK', self.prefix.cookbook)
+        if "+examples" in self.spec:
+            env.set('SEISSOL_EXAMPLES', self.prefix.examples)
 
 
         if "+benchmarks" in self.spec:
