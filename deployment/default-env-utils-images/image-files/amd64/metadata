@@ -1,5 +1,0 @@
-config: Linux image-builder 4.15.0-136-generic #140-Ubuntu SMP Thu Jan 28 05:20:47 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux
-Docker version 20.10.4, build d3cb89e
-singularity version 3.7.0
-spack: 0.16.1
-

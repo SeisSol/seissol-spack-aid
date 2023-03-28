@@ -1,6 +1,0 @@
-config: Linux image-builder 5.4.0-1018-aws #18~18.04.1-Ubuntu SMP Sun Jun 28 03:15:49 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
-Docker version 20.10.4, build d3cb89e
-github.com/docker/buildx v0.5.1-docker 11057da37336192bfc57d81e02359ba7ba848e4a
-singularity version 3.7.0
-spack: 0.16.1
-

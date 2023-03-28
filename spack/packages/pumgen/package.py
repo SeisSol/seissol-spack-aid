@@ -23,14 +23,20 @@ class Pumgen(CMakePackage):
     depends_on('hdf5 +fortran +shared +hl +mpi') # NOTE: only tested with 1.8.21 version
     depends_on('pumi +int64 +zoltan ~fortran', when='~with_simmetrix')
     depends_on('simmetrix-simmodsuite', when='+with_simmetrix')
-    depends_on('pumi +int64 simmodsuite=kernels +zoltan ~fortran', when='+with_simmetrix')
+    depends_on('pumi +int64 simmodsuite=kernels +zoltan ~fortran ~simmodsuite_version_check', when='+with_simmetrix')
     depends_on('zoltan@3.83 +parmetis+int64 ~fortran +shared')
+    depends_on('easi@1.2: +asagi', when="+with_simmetrix")
+
 
     def cmake_args(self):
         args = [
             self.define_from_variant('SIMMETRIX', 'with_simmetrix'),
             self.define_from_variant('NETCDF', 'with_netcdf')
         ]
+        if 'simmetrix-simmodsuite' in self.spec:
+            mpi_id = self.spec["mpi"].name + self.spec["mpi"].version.up_to(1).string
+            args.append("-DSIM_MPI=" + mpi_id)
+
         return args                                                                                                 
 
     def install(self, spec, prefix):

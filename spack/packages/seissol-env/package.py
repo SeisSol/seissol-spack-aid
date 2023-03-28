@@ -34,17 +34,18 @@ class SeissolEnv(BundlePackage):
     depends_on('metis +int64 +shared', when="+mpi")
     depends_on('libxsmm@1.17 +generator', when="+libxsmm target=x86_64:")
 
-    depends_on('hdf5@1.10.5 +fortran +shared ~mpi', when="~mpi")
-    depends_on('hdf5@1.10.5 +fortran +shared +mpi', when="+mpi")
+    depends_on('hdf5@1.10:1.12.2 +fortran +shared +threadsafe ~mpi', when="~mpi")
+    depends_on('hdf5@1.10:1.12.2 +fortran +shared +threadsafe +mpi', when="+mpi")
 
-    depends_on('netcdf-c@4.6.1 +shared ~mpi', when="~mpi")
-    depends_on('netcdf-c@4.6.1 +shared +mpi', when="+mpi")
+    depends_on('netcdf-c@4.6:4.7.4 +shared ~mpi', when="~mpi")
+    depends_on('netcdf-c@4.6:4.7.4 +shared +mpi', when="+mpi")
 
     depends_on('asagi ~mpi ~mpi3', when="+asagi ~mpi")
     depends_on('asagi +mpi +mpi3', when="+asagi +mpi")
-    
-    depends_on('easi@1.1.2~asagi', when="~asagi")
-    depends_on('easi@1.1.2+asagi', when="+asagi")
+
+    depends_on('easi@1.2 ~asagi', when="~asagi")
+    depends_on('easi@1.2 +asagi', when="+asagi")
+
 
     depends_on('intel-mkl threads=none', when="extra_blas=mkl")
     depends_on('openblas threads=none', when="extra_blas=openblas")
@@ -69,7 +70,9 @@ class SeissolEnv(BundlePackage):
     def setup_run_environment(self, env):
         
         roots = []; bins = []; libs = []; includes = []; pkgconfigs = []; pythonpath = []
-        for child_spec in self.spec.dependencies():
+        # easiConfig.cmake need to know where is Findimpalajit.cmake so we also add the dependencies
+        # of easi to CMAKE_PREFIX_PATH
+        for child_spec in self.spec.dependencies() + self.spec['easi'].dependencies():
             roots.append(child_spec.prefix if os.path.isdir(child_spec.prefix) else None)
             bins.append(child_spec.prefix.bin if os.path.isdir(child_spec.prefix.bin) else None)
             libs.append(child_spec.prefix.lib if os.path.isdir(child_spec.prefix.lib) else None)
@@ -103,6 +106,5 @@ class SeissolEnv(BundlePackage):
         
         # add pspamm while loading seissol-env
         pspamm = self.spec['py-pspamm']
-        env.prepend_path('PYTHONPATH', pspamm.prefix.pspamm)
-        env.prepend_path('PATH', pspamm.prefix.pspamm)
-
+        env.prepend_path('PYTHONPATH', pspamm.prefix)
+        env.prepend_path('PATH', pspamm.prefix)
