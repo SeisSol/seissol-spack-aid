@@ -46,11 +46,11 @@ class SeissolUtils(Package):
              when='+benchmarks', 
              placement='benchmarks')
 
-    depends_on("hdf5@1.10.5 +fortran +shared +mpi")
+    depends_on('hdf5@1.10:1.12.2 +shared +threadsafe +mpi')
     depends_on('netcdf-c@4.6.1 +shared +mpi')
     depends_on('pumgen')
     depends_on('glm@0.9.7.1')
-    depends_on('proj@4.9.2')
+    depends_on('proj@4.9.2 +pic')
     depends_on('eigen@3.4.0')
 
     depends_on("gmsh+hdf5+metis+netgen~med", when='~gmsh_gui')
