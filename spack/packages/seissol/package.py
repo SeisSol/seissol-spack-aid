@@ -17,6 +17,9 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     version("master", branch="master", submodules=True)
     # we cannot use the tar.gz file because it does not contains submodules
     version(
+        "1.1.4", tag="v1.1.4", commit="6d301757378ad8446173e0a12c095a695a708aaf", submodules=True
+    )
+    version(
         "1.1.3", tag="v1.1.3", commit="01ae1b127fcc6f766b819d2e797df6a3547d730a", submodules=True
     )
     version(
@@ -89,7 +92,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             "sycl_backend",
             default="acpp",
             description="SYCL backend to use for DR and point sources",
-            values=("acpp", "dpcpp", "oneapi"),
+            values=("acpp", "oneapi"),
             when=f"+{v}",
         )
         variant(
@@ -110,7 +113,6 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     )
 
     requires("%oneapi", when="sycl_backend=oneapi")
-    requires("%dpcpp", when="sycl_backend=dpcpp")
 
     depends_on("hipsycl@0.9.3: +cuda", when="+cuda sycl_backend=acpp")
 
@@ -170,7 +172,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     # cuda_hardware_manager: Could not obtain number of devices (error code = CUDA:35)
     # [hipSYCL Error] from (...)/cuda_hardware_manager.cpp:74 @ get_device():
     # cuda_hardware_manager: Attempt to access invalid device detected.
-    conflicts("cuda@12", when="+cuda cuda_arch=86")
+    #conflicts("cuda@12", when="+cuda cuda_arch=86")
     depends_on("cuda@11:", when="+cuda")
     depends_on("hip", when="+rocm")
 
@@ -214,12 +216,14 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("py-setuptools", type="build", when="+python")
 
     depends_on("py-pspamm", when="gemm_tools_list=PSpaMM", type="build")
+    forwarded_variants = ["cuda", "intel_gpu", "rocm"]
+    for v in forwarded_variants:
+        depends_on("py-gemmforge", when=f"+{v}", type="build")
+        depends_on("py-chainforge", when=f"+{v}", type="build")
+
     depends_on(
         "libxsmm@1.17 +generator", when="gemm_tools_list=LIBXSMM target=x86_64:", type="build"
     )
-
-    # TODO: gemmforge
-    # TODO: chainforge
 
     def cmake_args(self):
         args = [
@@ -259,7 +263,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             if self.spec.satisfies("+cuda"):
                 cuda_arch = self.spec.variants["cuda_arch"].value[0]
                 args.append(f"-DDEVICE_ARCH=sm_{cuda_arch}")
-                args.append("-DUSE_GRAPH_COMPUTING=ON -DENABLE_PROFILING_MARKERS=ON")
+                args.append("-DUSE_GRAPH_CAPTURING=ON -DENABLE_PROFILING_MARKERS=ON")
                 if self.spec.satisfies("~sycl_gemm"):
                     args.append("-DDEVICE_BACKEND=cuda")
 
@@ -267,7 +271,13 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             if self.spec.satisfies("+rocm"):
                 amdgpu_target = self.spec.variants["amdgpu_target"].value[0]
                 args.append(f"-DDEVICE_ARCH={amdgpu_target}")
-                args.append("-DUSE_GRAPH_COMPUTING=ON -DENABLE_PROFILING_MARKERS=ON")
+                args.append("-DENABLE_PROFILING_MARKERS=ON")
+
+                if self.spec.satisfies("+rocm@:5.6"):
+                    args.append("-DUSE_GRAPH_CAPTURING=OFF")
+                else:
+                    args.append("-DUSE_GRAPH_CAPTURING=ON")
+
                 if self.spec.satisfies("~sycl_gemm"):
                     args.append("-DDEVICE_BACKEND=hip")
 
@@ -275,12 +285,15 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             if self.spec.satisfies("+intel_gpu"):
                 assert self.spec.variants["intel_gpu_arch"].value != "none"
                 intel_gpu_arch = self.spec.variants["intel_gpu_arch"].value
-                args.append("-DUSE_GRAPH_COMPUTING=ON")
+                if self.spec.satisfies("@:1.1.3"):
+                    args.append("-DUSE_GRAPH_CAPTURING=OFF")
+                else:
+                    args.append("-DUSE_GRAPH_CAPTURING=ON")
                 args.append(f"-DDEVICE_ARCH={intel_gpu_arch}")
 
             # SYCL
-            sycl_backends = {"acpp": "hipsycl", "dpcpp": "oneapi", "oneapi": "oneapi"}
-            syclcc_backends = {"acpp": "hipsycl", "dpcpp": "dpcpp", "oneapi": "dpcpp"}
+            sycl_backends = {"acpp": "hipsycl", "oneapi": "oneapi"}
+            syclcc_backends = {"acpp": "hipsycl", "oneapi": "dpcpp"}
 
             sycl_backend = self.spec.variants["sycl_backend"].value
             args.append(f"-DSYCLCC={syclcc_backends[sycl_backend]}")
