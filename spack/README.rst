@@ -27,6 +27,7 @@ This branch contains additional packages for supermuc:
 - easi because of https://github.com/spack/spack/pull/42784, merged spack on supermuc is too old
 - seissol from https://github.com/spack/spack/pull/41176 (not yet merged)
 - mumps (for tandem) because of https://github.com/spack/spack/pull/41062, merged spack on supermuc is too old
+- hipsolver (for tandem) because of https://github.com/spack/spack/issues/44805
 
 General Information
 -------------------
