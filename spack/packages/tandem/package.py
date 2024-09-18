@@ -25,6 +25,7 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
         "1.1.0", tag="v1.1.0", commit="17c42dc9ae0ec519dcc1b5732681b2e4054666f1", submodules=True
     )
     version("1.0", tag="v1.0", commit="eccab10cbdf5842ed9903fac7a023be5e2779f36", submodules=True)
+
     patch("fix_v1.0_compilation.diff", when="@1.0")
 
     maintainers("dmay23", "Thomas-Ulrich")
@@ -59,14 +60,13 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("eigen@3.4.0")
 
     depends_on("zlib-api")
-    depends_on("petsc@3.14.6:3.21.2 +int64 +mumps +scalapack memalign=32")
-    depends_on("petsc@3.14.6:3.21.2 +int64 +mumps +scalapack +knl", when="target=skylake:")
-    depends_on("petsc@3.14.6:3.21.2 +int64 +mumps +scalapack memalign=32 +cuda", when="+cuda")
-    depends_on("petsc@3.14.6:3.21.2 +int64 +mumps +scalapack memalign=32 +rocm", when="+rocm")
+    depends_on("petsc@3.14.6: +int64 +mumps +scalapack memalign=32")
+    depends_on("petsc@3.14.6: +int64 +mumps +scalapack +knl", when="target=skylake:")
+    depends_on("petsc@3.14.6: +int64 +mumps +scalapack memalign=32 +cuda", when="+cuda")
+    depends_on("petsc@3.14.6: +int64 +mumps +scalapack memalign=32 +rocm", when="+rocm")
 
     depends_on("python@3", type="build", when="+python")
     depends_on("py-numpy", type="build", when="+python")
-
 
     # see https://github.com/TEAR-ERC/tandem/issues/45
     conflicts("%intel")
