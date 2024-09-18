@@ -18,16 +18,17 @@ reasons of this. :ref:`Known Issues <spack_known_issues>` is a good starting
 point to have a look in case if you face a problem installing SeisSol 
 with Spack.
 
-Additional packages for supermuc
---------------------------------
+Additional packages for supermuc/LUMI-G
+---------------------------------------
 
 This branch contains additional packages for supermuc:
 
-- py-numpy because of https://github.com/spack/spack/pull/43020, merged spack on supermuc is too old
-- easi because of https://github.com/spack/spack/pull/42784, merged spack on supermuc is too old
+- py-numpy because of https://github.com/spack/spack/pull/43020, merged spack on supermuc/LUMI is too old
+- easi because of https://github.com/spack/spack/pull/42784, merged spack on supermuc/LUMI is too old
 - seissol from https://github.com/spack/spack/pull/41176 (not yet merged)
-- mumps (for tandem) because of https://github.com/spack/spack/pull/41062, merged spack on supermuc is too old
-- hipsolver (for tandem) because of https://github.com/spack/spack/issues/44805
+- mumps (for tandem) because of https://github.com/spack/spack/pull/41062, merged spack on supermuc/LUMI is too old
+- hipsolver (for tandem on LUMI-G) because of https://github.com/spack/spack/issues/44805
+- netlib-scalapack (for tandem on LUMI-G) because of https://github.com/spack/spack/issues/44821
 
 General Information
 -------------------
