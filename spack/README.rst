@@ -241,7 +241,7 @@ Options
 
 - *asagi* [**default=on**, off] - installs asagi 
 - *building_tools* [**default=on**, off] - installs scons and cmake
-- *extra_blas* [**default=none**, mkl, openblas, blis] - installs extra blas implementations
+- *gemm_tools_list* [**default=LIBXSMM,PSpaMM**, "LIBXSMM", "MKL", "OpenBLAS", "BLIS", "PSpaMM", "Eigen", "LIBXSMM_JIT"] - installs extra gemm toolkit(s) for the (CPU) code generator
 - *mpi* [**default=on**, off] - installs an MPI implementation
 - *python* [on, **default=off**] - installs python, numpy, scipy and pip
 
@@ -259,13 +259,10 @@ Examples
   # 2. with gcc compiler suite
   spack install seissol-env +mpi +asagi %gcc@8.3.0 ^openmpi@3.1.5
 
-  # 3. with openblas as an extra option
-  spack install seissol-env +mpi +asagi extra_blas=openblas %gcc@8.3.0 ^openmpi@3.1.5
+  # 3. with OpenBLAS as an extra option
+  spack install seissol-env +mpi +asagi gemm_tools_list=OpenBLAS %gcc@8.3.0 ^openmpi@3.1.5
 
-  # 4. with a gpu support
-  spack install seissol-env +mpi +asagi %gcc@8.3.0 ^openmpi@3.1.5+cuda ^cuda@10.1.243
-
-  # 5. with python, numpy and scipy
+  # 4. with python, numpy and scipy
   spack install seissol-env +mpi +asagi +python %gcc@8.3.0 ^openmpi@3.1.5
 
 
