@@ -8,7 +8,9 @@ from spack.package import *
 
 
 class PyChainforge(PythonPackage):
-    """not really sure what it is, but need by seissol GPUs"""
+    """code generator (“ChainForge”) that fuses subsequent batched matrix multiplications
+    (“GEMMs”) into a single GPU kernel, holding intermediate results in shared memory as long as necessary.
+    """
 
     git = "https://github.com/SeisSol/chainforge.git"
 
