@@ -18,6 +18,9 @@ class PyGemmforge(PythonPackage):
 
     version("master", branch="master")
     depends_on("py-numpy")
+    depends_on("py-jinja2", type=("build", "run"))
+    depends_on("py-pyyaml", type=("build", "run"))
+    depends_on("py-setuptools", type="build")
 
     def install(self, spec, prefix):
         install_tree(".", prefix)
