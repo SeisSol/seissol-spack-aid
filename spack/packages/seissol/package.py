@@ -167,12 +167,6 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     # with cuda 12 and llvm 14:15, we have the issue: "error: no template named 'texture"
     # https://github.com/llvm/llvm-project/issues/61340
     conflicts("cuda@12", when="+cuda ^llvm@14:15")
-    # this issue is fixed with llvm 16. SeisSol compiles but does not run on heisenbug:
-    # [hipSYCL Warning] from (...)/cuda_hardware_manager.cpp:55 @ cuda_hardware_manager():
-    # cuda_hardware_manager: Could not obtain number of devices (error code = CUDA:35)
-    # [hipSYCL Error] from (...)/cuda_hardware_manager.cpp:74 @ get_device():
-    # cuda_hardware_manager: Attempt to access invalid device detected.
-    #conflicts("cuda@12", when="+cuda cuda_arch=86")
     depends_on("cuda@11:", when="+cuda")
     depends_on("hip", when="+rocm")
 
@@ -185,8 +179,8 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     )
     depends_on("kahip", when="+mpi graph_partitioning_libs=parhip")
 
-    depends_on("hdf5@1.10:1.12.2 +shared +threadsafe ~mpi", when="~mpi")
-    depends_on("hdf5@1.10:1.12.2 +shared +threadsafe +mpi", when="+mpi")
+    depends_on("hdf5@1.10 +shared +threadsafe ~mpi", when="~mpi")
+    depends_on("hdf5@1.10 +shared +threadsafe +mpi", when="+mpi")
 
     depends_on("netcdf-c@4.6:4.7.4 +shared ~mpi", when="~mpi +netcdf")
     depends_on("netcdf-c@4.6:4.7.4 +shared +mpi", when="+mpi +netcdf")
@@ -194,8 +188,8 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("asagi ~mpi ~mpi3 ~fortran", when="+asagi ~mpi")
     depends_on("asagi +mpi +mpi3", when="+asagi +mpi")
 
-    depends_on("easi@1.3 ~asagi jit=impalajit,lua", when="~asagi")
-    depends_on("easi@1.3 +asagi jit=impalajit,lua", when="+asagi")
+    depends_on("easi ~asagi jit=impalajit,lua", when="~asagi")
+    depends_on("easi +asagi jit=impalajit,lua", when="+asagi")
 
     depends_on("intel-mkl threads=none", when="gemm_tools_list=MKL")
     depends_on("blis threads=none", when="gemm_tools_list=BLIS")

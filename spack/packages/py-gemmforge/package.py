@@ -22,9 +22,6 @@ class PyGemmforge(PythonPackage):
     depends_on("py-pyyaml", type=("build", "run"))
     depends_on("py-setuptools", type="build")
 
-    def install(self, spec, prefix):
-        install_tree(".", prefix)
-
     def setup_run_environment(self, env):
         env.prepend_path("PATH", self.spec.prefix)
         env.prepend_path("PYTHONPATH", self.spec.prefix)
