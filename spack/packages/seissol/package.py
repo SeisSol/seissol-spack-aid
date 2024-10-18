@@ -151,10 +151,9 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
         multi=True,
     )
 
-    variant("mpi", default=True, description="installs an MPI implementation")
     variant("memkind", default=True, description="Use memkind library for hbw memory support")
 
-    depends_on("mpi", when="+mpi")
+    depends_on("mpi")
 
     with when("+cuda"):
         for var in ["openmpi", "mpich", "mvapich", "mvapich2", "mvapich2-gdr"]:
@@ -167,35 +166,27 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     # with cuda 12 and llvm 14:15, we have the issue: "error: no template named 'texture"
     # https://github.com/llvm/llvm-project/issues/61340
     conflicts("cuda@12", when="+cuda ^llvm@14:15")
-    # this issue is fixed with llvm 16. SeisSol compiles but does not run on heisenbug:
-    # [hipSYCL Warning] from (...)/cuda_hardware_manager.cpp:55 @ cuda_hardware_manager():
-    # cuda_hardware_manager: Could not obtain number of devices (error code = CUDA:35)
-    # [hipSYCL Error] from (...)/cuda_hardware_manager.cpp:74 @ get_device():
-    # cuda_hardware_manager: Attempt to access invalid device detected.
-    #conflicts("cuda@12", when="+cuda cuda_arch=86")
     depends_on("cuda@11:", when="+cuda")
     depends_on("hip", when="+rocm")
 
     # graph partitioning
-    depends_on("parmetis +int64 +shared", when="+mpi graph_partitioning_libs=parmetis")
-    depends_on("metis +int64 +shared", when="+mpi graph_partitioning_libs=parmetis")
+    with when("graph_partitioning_libs=parmetis"):
+        depends_on("parmetis +int64 +shared")
+        depends_on("metis +int64 +shared")
+
     depends_on(
-        "scotch +mpi +mpi_thread +shared +threads +int64",
-        when="+mpi graph_partitioning_libs=ptscotch",
+        "scotch +mpi +mpi_thread +shared +threads +int64", when="graph_partitioning_libs=ptscotch"
     )
-    depends_on("kahip", when="+mpi graph_partitioning_libs=parhip")
+    depends_on("kahip", when="graph_partitioning_libs=parhip")
 
-    depends_on("hdf5@1.10:1.12.2 +shared +threadsafe ~mpi", when="~mpi")
-    depends_on("hdf5@1.10:1.12.2 +shared +threadsafe +mpi", when="+mpi")
+    depends_on("hdf5 +shared +threadsafe +hl +mpi")
 
-    depends_on("netcdf-c@4.6:4.7.4 +shared ~mpi", when="~mpi +netcdf")
-    depends_on("netcdf-c@4.6:4.7.4 +shared +mpi", when="+mpi +netcdf")
+    depends_on("netcdf-c@4.6: +shared +mpi", when="+netcdf")
 
-    depends_on("asagi ~mpi ~mpi3 ~fortran", when="+asagi ~mpi")
-    depends_on("asagi +mpi +mpi3", when="+asagi +mpi")
+    depends_on("asagi +mpi +mpi3", when="+asagi")
 
-    depends_on("easi@1.3 ~asagi jit=impalajit,lua", when="~asagi")
-    depends_on("easi@1.3 +asagi jit=impalajit,lua", when="+asagi")
+    depends_on("easi ~asagi jit=impalajit,lua", when="~asagi")
+    depends_on("easi +asagi jit=impalajit,lua", when="+asagi")
 
     depends_on("intel-mkl threads=none", when="gemm_tools_list=MKL")
     depends_on("blis threads=none", when="gemm_tools_list=BLIS")
@@ -213,13 +204,14 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("python@3", type="build", when="+python")
     depends_on("py-numpy", type="build", when="+python")
     depends_on("py-scipy", type="build", when="+python")
+    depends_on("py-matplotlib", type="build", when="+python")
     depends_on("py-setuptools", type="build", when="+python")
 
     depends_on("py-pspamm", when="gemm_tools_list=PSpaMM", type="build")
     forwarded_variants = ["cuda", "intel_gpu", "rocm"]
     for v in forwarded_variants:
         depends_on("py-gemmforge", when=f"+{v}", type="build")
-        depends_on("py-chainforge", when=f"+{v}", type="build")
+        depends_on("py-chainforgecodegen", when=f"+{v}", type="build")
 
     depends_on(
         "libxsmm@1.17 +generator", when="gemm_tools_list=LIBXSMM target=x86_64:", type="build"
@@ -227,25 +219,21 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
 
     def cmake_args(self):
         args = [
+            "-DMPI=ON",
             self.define_from_variant("ASAGI", "asagi"),
             self.define_from_variant("PRECISION", "precision"),
             self.define_from_variant("PLASTICITY_METHOD", "plasticity_method"),
             self.define_from_variant("DR_QUAD_RULE", "dr_quad_rule"),
             self.define_from_variant("ORDER", "convergence_order"),
             self.define_from_variant("EQUATIONS", "equations"),
-            self.define_from_variant("MPI", "mpi"),
             self.define_from_variant("NETCDF", "netcdf"),
         ]
 
         gemm_tools_list = ",".join(self.spec.variants["gemm_tools_list"].value)
         args.append(f"-DGEMM_TOOLS_LIST={gemm_tools_list}")
 
-        if self.spec.satisfies("+mpi"):
-            graph_partitioning_libs = ",".join(self.spec.variants["graph_partitioning_libs"].value)
-            args.append(f"-DGRAPH_PARTITIONING_LIBS={graph_partitioning_libs}")
-        else:
-            # if no MPI, then no graph partitioning is needed
-            args.append("-DGRAPH_PARTITIONING_LIBS=none")
+        graph_partitioning_libs = ",".join(self.spec.variants["graph_partitioning_libs"].value)
+        args.append(f"-DGRAPH_PARTITIONING_LIBS={graph_partitioning_libs}")
 
         if self.spec.variants["equations"].value != "viscoelastic2":
             args.append("-DNUMBER_OF_MECHANISMS=0")
