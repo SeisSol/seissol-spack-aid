@@ -17,6 +17,9 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     version("master", branch="master", submodules=True)
     # we cannot use the tar.gz file because it does not contains submodules
     version(
+        "1.2.0", tag="v1.2.0", commit="2057e6e81965e0789128c6d177592800bcf956e1", submodules=True
+    )
+    version(
         "1.1.4", tag="v1.1.4", commit="6d301757378ad8446173e0a12c095a695a708aaf", submodules=True
     )
     version(
@@ -101,7 +104,6 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             description="Use SYCL also for the wave propagation part (default for Intel GPUs)",
             when=f"+{v}",
         )
-    variant("python", default=False, description="installs python, pip, numpy and scipy")
 
     requires(
         "-cuda -rocm -intel_gpu",
@@ -201,21 +203,22 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("eigen@3.4.0")
 
     # build dependencies (code generation)
-    depends_on("python@3", type="build", when="+python")
-    depends_on("py-numpy", type="build", when="+python")
-    depends_on("py-scipy", type="build", when="+python")
-    depends_on("py-matplotlib", type="build", when="+python")
-    depends_on("py-setuptools", type="build", when="+python")
+    with default_args(type="build"):
+        # https://seissol.readthedocs.io/en/latest/installing-dependencies.html
+        depends_on("cmake@3.20:")
+        depends_on("python@3.9:")
+        depends_on("py-setuptools")
+        depends_on("py-numpy@1.12:")
+        depends_on("py-scipy")
+        depends_on("py-matplotlib")
+        depends_on("py-pspamm", when="gemm_tools_list=PSpaMM")
 
-    depends_on("py-pspamm", when="gemm_tools_list=PSpaMM", type="build")
-    forwarded_variants = ["cuda", "intel_gpu", "rocm"]
-    for v in forwarded_variants:
-        depends_on("py-gemmforge", when=f"+{v}", type="build")
-        depends_on("py-chainforgecodegen", when=f"+{v}", type="build")
+        forwarded_variants = ["cuda", "intel_gpu", "rocm"]
+        for v in forwarded_variants:
+            depends_on("py-gemmforge", when=f"+{v}")
+            depends_on("py-chainforgecodegen", when=f"+{v}")
 
-    depends_on(
-        "libxsmm@1.17 +generator", when="gemm_tools_list=LIBXSMM target=x86_64:", type="build"
-    )
+        depends_on("libxsmm@=1.17 +generator", when="gemm_tools_list=LIBXSMM target=x86_64:")
 
     def cmake_args(self):
         args = [
@@ -294,17 +297,17 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
 
         # basic family matching
         hostarch = "noarch"
-        if self.spec.target.family == "aarch64":
+        if str(self.spec.target) == "aarch64":
             hostarch = "neon"
-        if self.spec.target.family == "x86_64":
+        if str(self.spec.target) == "x86_64":
             # pure x86_64v1 doesn't support anything above SSE3
             hostarch = "noarch"
-        if self.spec.target.family == "x86_64_v2":
+        if str(self.spec.target) == "x86_64_v2":
             # AVX is only required for x86_64v3 and upwards
             hostarch = "wsm"
-        if self.spec.target.family == "x86_64_v3":
+        if str(self.spec.target) == "x86_64_v3":
             hostarch = "hsw"
-        if self.spec.target.family == "x86_64_v4":
+        if str(self.spec.target) == "x86_64_v4":
             hostarch = "skx"
 
         # specific architecture matching
@@ -339,8 +342,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
 
         args.append(f"-DHOST_ARCH={hostarch}")
 
-        if "+python" in self.spec:
-            args.append(self.define("PYTHON_EXECUTABLE", self.spec["python"].command.path))
+        args.append(self.define("PYTHON_EXECUTABLE", self.spec["python"].command.path))
 
         return args
 
