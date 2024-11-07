@@ -23,6 +23,7 @@ class Petsc(Package, CudaPackage, ROCmPackage):
     tags = ["e4s"]
 
     version("main", branch="main")
+    version("3.22.1", sha256="7117d3ae6827f681ed9737939d4e86896b4751e27cca941bb07e5703f19a0a7b")
     version("3.22.0", sha256="2c03f7c0f7ad2649240d4989355cf7fb7f211b75156cd7d424e1d9dd7dfb290b")
     version("3.21.6", sha256="cb2dc00742a89cf8acf9ff8aae189e6864e8b90f4997f087be6e54ff39c30d74")
     version("3.21.5", sha256="4eb1ec04c1a8988bd524f71f8d7d980dc1853d5be8791c0f19f3c09eef71fdd2")
@@ -167,7 +168,21 @@ class Petsc(Package, CudaPackage, ROCmPackage):
         "memalign",
         default="none",
         description="Specify alignment of allocated arrays",
-        values=("4", "8", "16", "32", "64", "128", "none"),
+        values=(
+            "4",
+            "8",
+            "16",
+            "32",
+            "64",
+            "128",
+            "256",
+            "512",
+            "1024",
+            "2048",
+            "4096",
+            "8192",
+            "none",
+        ),
         multi=False,
     )
     variant("p4est", default=False, description="Activates support for P4Est (only parallel)")
