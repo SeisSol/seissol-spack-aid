@@ -19,7 +19,7 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
     license("BSD-3-Clause")
 
     version("main", branch="main", submodules=True)
-    version("staging", branch="dmay/staging", submodules=True)
+    version("1.2.0-rc", branch="dmay/staging", submodules=True)
     version("develop", branch="thomas/develop", submodules=True)
 
     # we cannot use the tar.gz file because it does not contains submodules
