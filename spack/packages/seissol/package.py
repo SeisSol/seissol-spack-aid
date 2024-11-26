@@ -17,6 +17,9 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     version("master", branch="master", submodules=True)
     # we cannot use the tar.gz file because it does not contains submodules
     version(
+        "1.3.0", tag="v1.3.0", commit="91377508af4412914d707b04481f8b678b1c4044", submodules=True
+    )
+    version(
         "1.2.0", tag="v1.2.0", commit="2057e6e81965e0789128c6d177592800bcf956e1", submodules=True
     )
     version(
@@ -27,6 +30,10 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     )
     version(
         "1.1.2", tag="v1.1.2", commit="71002c1c1498ebd6f50a954731da68fa4f9d436b", submodules=True
+    )
+
+    version(
+        "1.0.1", tag="v1.0.1", commit="9b1b0ec970af4ad79a155c63035234b660838476", submodules=True
     )
 
     maintainers("Thomas-Ulrich", "davschneller", "vikaskurapati")
@@ -145,6 +152,12 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
         msg="A value for intel_gpu_arch must be specified. Add intel_gpu_arch=XX",
     )
 
+    conflicts(
+        "%intel",
+        when="@1.3",
+        msg="The Intel compiler is unsupported from v1.3. Please use e.g.gcc or oneapi",
+    )
+
     variant(
         "gemm_tools_list",
         default="LIBXSMM,PSpaMM",
@@ -183,7 +196,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("hdf5 +shared +threadsafe +hl +mpi")
 
-    depends_on("netcdf-c@4.6: +shared +mpi", when="+netcdf")
+    depends_on("netcdf-c@4.6:4.8.1 +shared +mpi", when="+netcdf")
 
     depends_on("asagi +mpi +mpi3", when="+asagi")
 
@@ -208,9 +221,10 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("cmake@3.20:")
         depends_on("python@3.9:")
         depends_on("py-setuptools")
-        depends_on("py-numpy@1.12:")
-        depends_on("py-scipy")
-        depends_on("py-matplotlib")
+        # commented because on NG it is a pain to install with spack
+        #depends_on("py-numpy@1.12:")
+        #depends_on("py-scipy")
+        #depends_on("py-matplotlib")
         depends_on("py-pspamm", when="gemm_tools_list=PSpaMM")
 
         forwarded_variants = ["cuda", "intel_gpu", "rocm"]
