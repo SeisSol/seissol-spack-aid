@@ -154,8 +154,8 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
 
     conflicts(
         "%intel",
-        when="@1.3:",
-        msg="The Intel compiler is unsupported from v1.3 onward. Please use e.g.gcc or oneapi",
+        when="@1.3",
+        msg="The Intel compiler is unsupported from v1.3. Please use e.g.gcc or oneapi",
     )
 
     variant(
@@ -196,7 +196,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("hdf5 +shared +threadsafe +hl +mpi")
 
-    depends_on("netcdf-c@4.6: +shared +mpi", when="+netcdf")
+    depends_on("netcdf-c@4.6:4.8.1 +shared +mpi", when="+netcdf")
 
     depends_on("asagi +mpi +mpi3", when="+asagi")
 
@@ -221,9 +221,10 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
         depends_on("cmake@3.20:")
         depends_on("python@3.9:")
         depends_on("py-setuptools")
-        depends_on("py-numpy@1.12:")
-        depends_on("py-scipy")
-        depends_on("py-matplotlib")
+        # commented because on NG it is a pain to install with spack
+        #depends_on("py-numpy@1.12:")
+        #depends_on("py-scipy")
+        #depends_on("py-matplotlib")
         depends_on("py-pspamm", when="gemm_tools_list=PSpaMM")
 
         forwarded_variants = ["cuda", "intel_gpu", "rocm"]
