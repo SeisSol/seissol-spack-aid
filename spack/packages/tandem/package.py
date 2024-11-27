@@ -117,7 +117,7 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
                 conflicts(f"^petsc memalign={forbidden}", when=f"target={arch}")
 
     depends_on("petsc +int64 +mumps +scalapack")
-    depends_on("petsc@3.22:", when="@1.2:")
+    depends_on("petsc@main", when="@1.2:")
     depends_on("petsc@3.16:3.17", when="@:1.1")
 
     depends_on("petsc +knl", when="target=skylake:")

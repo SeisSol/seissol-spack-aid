@@ -29,6 +29,7 @@ This branch contains additional packages for supermuc:
 - mumps (for tandem) because of https://github.com/spack/spack/pull/41062, merged spack on supermuc/LUMI is too old
 - hipsolver (for tandem on LUMI-G) because of https://github.com/spack/spack/issues/44805
 - netlib-scalapack (for tandem on LUMI-G) because of https://github.com/spack/spack/issues/44821
+- petsc and sowing for tandem on NG, with petsc@main
 
 General Information
 -------------------
