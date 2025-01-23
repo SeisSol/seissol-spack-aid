@@ -13,6 +13,7 @@ class Pumgen(CMakePackage):
             branch='master',
             submodules=True)
 
+    version('1.1.1', tag='v1.1.1', commit='ad3d0f22edfdb72713ef7bb42a41251fa7275bd8', submodules=True)
     version('1.0.1', tag='v1.0.1', commit='13d1e1f41e3cdcb1d3c94f1870f003778e5f0ce0', submodules=True)
     maintainers = ['ravil-mobile']
     variant('with_simmetrix', default=False)
