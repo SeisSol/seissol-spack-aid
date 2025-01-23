@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
-from spack import *
+from spack.package import *
 
 class Pumgen(CMakePackage):
     homepage = "https://github.com/SeisSol/PUMGen/wiki/How-to-compile-PUMGen"
