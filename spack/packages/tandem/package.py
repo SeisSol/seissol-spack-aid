@@ -20,7 +20,7 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
 
     version("main", branch="main", submodules=True)
     version("1.2.0-rc", branch="dmay/staging", submodules=True)
-    version("develop", branch="thomas/develop", submodules=True)
+    version("1.2.0-rc3", branch="thomas/monitor_ts_and_yateto", submodules=True)
 
     # we cannot use the tar.gz file because it does not contains submodules
     version(
@@ -51,7 +51,7 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
         description="Minimum order of quadrature rule, 0 = automatic",
     )
     variant("libxsmm", default=False, description="Install libxsmm-generator")
-    variant("python", default=False, description="installs python and numpy")
+    variant("python@3.9:", default=False, description="installs python and numpy")
 
     depends_on("mpi")
 
@@ -202,6 +202,20 @@ class Tandem(CMakePackage, CudaPackage, ROCmPackage):
             hostarch = "a64fx"
 
         args.append(f"-DARCH={hostarch}")
+
+        # If we're building with cray mpich, we need to make sure we get the GTL library for
+        # gpu-aware MPI.
+        if self.spec.satisfies("+rocm ^cray-mpich"):
+            gtl_dir = join_path(self.spec["cray-mpich"].prefix, "..", "..", "..", "gtl", "lib")
+            print(gtl_dir)
+            args.append(
+                "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath={0} -L{0} -lmpi_gtl_hsa".format(gtl_dir)
+            )
+        elif self.spec.satisfies("+cuda ^cray-mpich"):
+            gtl_dir = join_path(self.spec["cray-mpich"].prefix, "..", "..", "..", "gtl", "lib")
+            args.append(
+                "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath={0} -L{0} -lmpi_gtl_cuda".format(gtl_dir)
+            )
 
         return args
 
