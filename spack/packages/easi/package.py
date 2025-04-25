@@ -21,6 +21,7 @@ class Easi(CMakePackage):
     license("BSD-3-Clause")
 
     version("master", branch="master")
+    version("1.5.2", tag="v1.5.2", commit="0d87b1a7db31e453d52c7213cb9b31bda88cbf40")
     version("1.3.0", tag="v1.3.0", commit="99309a0fa78bf11d668c599b3ee469224f04d55b")
     version("1.2.0", tag="v1.2.0", commit="305a119338116a0ceac6b68b36841a50250d05b1")
     version("1.1.2", tag="v1.1.2", commit="4c87ef3b3dca9415d116ef102cb8de750ef7e1a0")
