@@ -247,8 +247,9 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             depends_on("py-gemmforge", when=f"+{v}")
             depends_on("py-chainforgecodegen", when=f"+{v}")
 
-        #depends_on("tiny-tensor-compiler",when="+intel_gpu")
+        #depends_on("tiny-tensor-compiler +sycl",when="+intel_gpu")
         depends_on("py-tensorforge",when="+intel_gpu")
+        depends_on('intel-oneapi-compilers', when="+intel_gpu")
 
         depends_on("libxsmm@=1.17 +generator", when="gemm_tools_list=LIBXSMM target=x86_64:")
 
