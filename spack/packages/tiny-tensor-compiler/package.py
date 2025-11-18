@@ -22,6 +22,8 @@ class TinyTensorCompiler(CMakePackage):
     version("0.5.0", sha256="14443d6ad36bd4273df494f86889c96e577809422ed5a5cb45e78cc5cd4256d0")
     version("0.4.0", sha256="cf58fc61cb4948d77e10cd2fe1cdef74b92ae130174aa64a3f1d633acdbf7722")
     version("0.3.1", sha256="e512b92f9ef8f21362ea4a8f2655338769bc7fcf9de543e3dc7db86b696695b3")
+    #required for NG2, still running on the quite old 2350 LTS driver
+    patch("spirv_version.diff")
 
     depends_on("c", type="build")  # generated
     depends_on("cxx", type="build")  # generated
@@ -32,7 +34,6 @@ class TinyTensorCompiler(CMakePackage):
     variant("sycl", default=False, description="Build tinytc_sycl (SYCL runtime)")
 
     requires("+opencl +level-zero", when="+sycl")
-
     depends_on("cmake@3.23.0:", type="build")
     depends_on(
         "double-batched-fft-library ~sycl ~level_zero ~opencl@0.5.1:", type="link", when="@:0.3.1"

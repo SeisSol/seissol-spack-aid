@@ -1,0 +1,13 @@
+diff --git a/src/spv/module.hpp b/src/spv/module.hpp
+index 64b0c9f..0b4ee5e 100644
+--- a/src/spv/module.hpp
++++ b/src/spv/module.hpp
+@@ -48,7 +48,7 @@ struct tinytc_spv_mod final : tinytc::reference_counted {
+ 
+     tinytc_spv_mod(tinytc::shared_handle<tinytc_compiler_context_t> ctx,
+                    tinytc_core_feature_flags_t core_features, std::int32_t major_version = 1,
+-                   std::int32_t minor_version = 6);
++                   std::int32_t minor_version = 4);
+     ~tinytc_spv_mod();
+ 
+     inline auto context() const -> tinytc_compiler_context_t { return ctx_.get(); }
