@@ -371,6 +371,10 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
             hostarch = "apple-m2"
         if self.spec.target >= "a64fx":
             hostarch = "a64fx"
+        if hostarch in ["hsw", "naples", "rome", "milan"] and self.spec.satisfies("@1.3.3:"):
+            hostarch = "avx2-256"
+        if hostarch in ["skx", "bergamo"] and self.spec.satisfies("@1.3.3:"):
+            hostarch = "avx10-512"
 
         args.append(f"-DHOST_ARCH={hostarch}")
 
