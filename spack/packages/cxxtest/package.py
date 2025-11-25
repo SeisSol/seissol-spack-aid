@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 
-from spack import *
+from spack.package import *
 
 class Cxxtest(Package):
     """CxxTest is a unit testing framework for C++."""
