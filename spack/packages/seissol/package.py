@@ -124,7 +124,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
         )
 
     requires(
-        "-cuda -rocm -intel_gpu",
+        "~cuda ~rocm ~intel_gpu",
         "+cuda",
         "+rocm",
         "+intel_gpu",
