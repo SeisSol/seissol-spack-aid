@@ -222,7 +222,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("intel-oneapi-mkl threads=none", when="gemm_tools_list=MKL")
     depends_on("blis threads=none", when="gemm_tools_list=BLIS")
     depends_on("openblas threads=none", when="gemm_tools_list=OpenBLAS")
-    depends_on("libxsmm@main", when="gemm_tools_list=LIBXSMM_JIT")
+    depends_on("libxsmm@1.17 cflags=-std=gnu17", when="gemm_tools_list=LIBXSMM_JIT")
 
     conflicts("gemm_tools_list=LIBXSMM", when="gemm_tools_list=LIBXSMM_JIT")
 
@@ -251,7 +251,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
         #depends_on("py-tensorforge",when="+intel_gpu")
         depends_on('intel-oneapi-compilers', when="+intel_gpu")
 
-        depends_on("libxsmm@=1.17 +generator", when="gemm_tools_list=LIBXSMM target=x86_64:")
+        depends_on("libxsmm@1.17 +generator cflags=-std=gnu17", when="gemm_tools_list=LIBXSMM target=x86_64:")
 
     def cmake_args(self):
         args = [
