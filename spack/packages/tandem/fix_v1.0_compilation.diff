@@ -1,0 +1,44 @@
+diff --git a/app/CMakeLists.txt b/app/CMakeLists.txt
+index 515f15f..bc48092 100644
+--- a/app/CMakeLists.txt
++++ b/app/CMakeLists.txt
+@@ -82,9 +82,9 @@ function(generate_code APP)
+     if("${YATETO_ARCH}" MATCHES "skl|naples|rome")
+         set(YATETO_ARCH "hsw")
+     endif()
+-    set(WITH_LIBXSMM "")
++    set(WITH_LIBXSMM "\'\'")
+     if(${LibxsmmGenerator_FOUND})
+-        set(WITH_LIBXSMM ${LibxsmmGeneratorExecutable})
++        set(WITH_LIBXSMM "\'${LibxsmmGeneratorExecutable}\'")
+     endif()
+     add_custom_command(
+         COMMAND
+diff --git a/src/mesh/Simplex.h b/src/mesh/Simplex.h
+index 6a2cf29..36b0be3 100644
+--- a/src/mesh/Simplex.h
++++ b/src/mesh/Simplex.h
+@@ -7,7 +7,7 @@
+ #include <cstddef>
+ #include <cstdint>
+ #include <utility>
+-
++#include <limits>
+ #include "util/Combinatorics.h"
+ 
+ namespace tndm {
+diff --git a/external/doctest.h b/external/doctest.h
+index c6bcafe..982da03 100644
+--- a/external/doctest.h
++++ b/external/doctest.h
+@@ -4016,6 +4016,10 @@ namespace {
+
+ #else // DOCTEST_PLATFORM_WINDOWS
+
++    // glibc 2.34+ fix
++    #undef SIGSTKSZ
++    #define SIGSTKSZ 32768
++
+     struct SignalDefs
+     {
+         int         id;
