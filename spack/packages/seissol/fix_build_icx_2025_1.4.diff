@@ -1,0 +1,57 @@
+diff --git a/src/DynamicRupture/FrictionLaws/CpuImpl/RateAndState.h b/src/DynamicRupture/FrictionLaws/CpuImpl/RateAndState.h
+index 58c010c11..d883c16bf 100644
+--- a/src/DynamicRupture/FrictionLaws/CpuImpl/RateAndState.h
++++ b/src/DynamicRupture/FrictionLaws/CpuImpl/RateAndState.h
+@@ -11,6 +11,13 @@
+ #include "BaseFrictionLaw.h"
+ #include "DynamicRupture/FrictionLaws/RateAndStateCommon.h"
+ 
++#ifdef __INTEL_LLVM_COMPILER
++#if __INTEL_LLVM_COMPILER >= 20250000
++#define SEISSOL_INTEL_SIMD_EXCEPTION
++#define SEISSOL_INTEL_SIMD_EXCEPTION_STRICT
++#endif
++#endif // __INTEL_LLVM_COMPILER
++
+ namespace seissol::dr::friction_law::cpu {
+ /**
+  * General implementation of a rate and state solver
+@@ -296,14 +303,19 @@ class RateAndStateBase : public BaseFrictionLaw<RateAndStateBase<Derived, TPMeth
+ 
+     const auto details = static_cast<Derived*>(this)->getMuDetails(ltsFace, localStateVariable);
+ 
++#ifndef SEISSOL_INTEL_SIMD_EXCEPTION_STRICT
+ #pragma omp simd
++#endif
+     for (std::uint32_t pointIndex = 0; pointIndex < misc::NumPaddedPoints; pointIndex++) {
+       // first guess = sliprate value of the previous step
+       slipRateTest[pointIndex] = this->slipRateMagnitude_[ltsFace][pointIndex];
+     }
+ 
+     for (uint32_t i = 0; i < settings_.maxNumberSlipRateUpdates; i++) {
++
++#ifndef SEISSOL_INTEL_SIMD_EXCEPTION_STRICT
+ #pragma omp simd
++#endif
+       for (std::uint32_t pointIndex = 0; pointIndex < misc::NumPaddedPoints; pointIndex++) {
+         // calculate friction coefficient and objective function
+         muF[pointIndex] =
+@@ -319,13 +331,18 @@ class RateAndStateBase : public BaseFrictionLaw<RateAndStateBase<Derived, TPMeth
+         return std::fabs(val) < settings_.newtonTolerance;
+       });
+       if (hasConverged) {
++#ifndef SEISSOL_INTEL_SIMD_EXCEPTION_STRICT
+ #pragma omp simd
++#endif
+         for (std::uint32_t pointIndex = 0; pointIndex < misc::NumPaddedPoints; pointIndex++) {
+           this->mu_[ltsFace][pointIndex] = muF[pointIndex];
+         }
+         return hasConverged;
+       }
++
++#ifndef SEISSOL_INTEL_SIMD_EXCEPTION
+ #pragma omp simd
++#endif
+       for (std::uint32_t pointIndex = 0; pointIndex < misc::NumPaddedPoints; pointIndex++) {
+         dMuF[pointIndex] = static_cast<Derived*>(this)->updateMuDerivative(
+             pointIndex, slipRateTest[pointIndex], details);
