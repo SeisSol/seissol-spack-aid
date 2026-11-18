@@ -19,6 +19,7 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     git = "https://github.com/SeisSol/SeisSol.git"
 
     version("master", branch="master", submodules=True)
+    version("1.4pre", commit="2149e110276db71061e20b3f50428bb4049b3340", submodules=True)
     # we cannot use the tar.gz file because it does not contains submodules
     version(
         "1.3.1", tag="v1.3.1", commit="9d35b989749d031132c8820b45b003ecc00e985a", submodules=True
@@ -44,6 +45,8 @@ class Seissol(CMakePackage, CudaPackage, ROCmPackage):
     )
 
     maintainers("Thomas-Ulrich", "davschneller", "vikaskurapati")
+    # apply the fixes of https://github.com/SeisSol/SeisSol/pull/1592
+    patch("fix_build_icx_2025_1.4.diff", when="@1.4pre")
 
     depends_on("cxx", type="build")
     depends_on("c", type="build")
